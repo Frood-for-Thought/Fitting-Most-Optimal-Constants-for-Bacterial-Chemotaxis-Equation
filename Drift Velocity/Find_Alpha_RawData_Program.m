@@ -137,26 +137,26 @@ for deme_start = 10:100
     else
         al_step = 5;
     end
-
+    
+    % Now that the range is more determined, put this into a new file.
+    % The file will generate a list of velocities over several iterations
+    % for each alpha value and then output that list.
+    % The data is then appended into Pos_Alpha_Array.
     Stage = 3;
-    [RawData,Vel_Diff,skip,next_skip,third_skip] = Calc_V_Per_Alpha_Deme_moreIter_Function(...
+    [RawData] = Calc_V_Per_Alpha_Deme_moreIter_Function(...
         Rtroc,F,vd_chemotaxis,ini_al,fin_al,al_step,deme_start,nl,Angle,Vo_max,xbias,Stage,DL);
-    RawData
-    Pos_Alpha_Array
-    Pos_Alpha_Array = [Pos_Alpha_Array; RawData];
-    T = array2table(Pos_Alpha_Array,...
-        'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity'})
-    format short G
-    if deme_start == 11
-        size(Pos_Alpha_Array)
-        return
-    end
-    % NEED TO MAKE NEW TABLE AND NOT Record_Data_Array.
 
+    Pos_Alpha_Array = [Pos_Alpha_Array; RawData]
+    if deme_start == 10
+        break
+    end
+%     T = array2table(Pos_Alpha_Array,...
+%         'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'})
+%     format short G
 end
 
-T = array2table(Pos_Alpha_Array,'VariableNames',{'Deme','Alpha'})
-% xlswrite('alpha_MaxC_2000_Grad_0.003.xlsx',T,'Output','F1');
+T = array2table(Pos_Alpha_Array,...
+    'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'})
 
 file_title = 'alpha_MaxC_%d_Grad_%.6f_raw_data.xlsx';
 filename = sprintf(file_title,Max_Food_Conc,Grad);

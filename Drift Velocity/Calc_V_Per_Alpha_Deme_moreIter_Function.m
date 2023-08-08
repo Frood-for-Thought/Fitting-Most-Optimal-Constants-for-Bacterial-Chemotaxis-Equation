@@ -1,4 +1,4 @@
-function [RawData,Vel_Diff,skip,next_skip,third_skip] = Calc_V_Per_Alpha_Deme_moreIter_Function(...
+function [RawData] = Calc_V_Per_Alpha_Deme_moreIter_Function(...
     Rtroc,F,vd_chemotaxis,ini_al,fin_al,al_step,deme_start,nl,Angle,Vo_max,xbias,Stage,DL)
 
 %% Set up arrays to contain alpha values and average speeds for each value
@@ -9,10 +9,7 @@ function [RawData,Vel_Diff,skip,next_skip,third_skip] = Calc_V_Per_Alpha_Deme_mo
 % the theoretical value.  The closest value is matched to later be used to
 % in curve fitting for the variable alpha value.
 
-Record_Data_Array = zeros();
-j = 1;
-Vel_Diff = zeros();
-
+RawData = [];
 for alpha = ini_al:al_step:fin_al
     
     %% The probability of Tumbling Up the Gradient
@@ -90,9 +87,6 @@ for alpha = ini_al:al_step:fin_al
     prob_tum_up = dt*exp(-lnr - alpha*Rtroc(deme_start)); % prob tumbling up
     prob_tum_down = dt*exp(-lnr + alpha*Rtroc(deme_start)); % prob tumbling down
     
-    skip = 5;
-    next_skip = 3;
-    third_skip = 2;
     if (Stage > 2) % (mod(n,third_skip) == 0)
         % Make one column with all the same alpha value.
         position = deme_start*ones(iter - 1, 1);
@@ -100,8 +94,8 @@ for alpha = ini_al:al_step:fin_al
         theoryVel = Average_Theory_Vel*ones(iter - 1, 1);
         prob_up = prob_tum_up*ones(iter - 1, 1);
         prob_down = prob_tum_down*ones(iter - 1, 1);
-        RawData = [position al_col theoryVel transpose(Caculated_Ave_Vd_Array) prob_up prob_down];
-        return
+        update = [position al_col theoryVel transpose(Caculated_Ave_Vd_Array) prob_up prob_down];
+        RawData = [RawData; update];
     end
     
     % Update Position in Alpha_Array
