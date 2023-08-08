@@ -27,16 +27,15 @@ deme_start = 50;
 
     %% Begin Calculation
     ini_al = 1.00; % The initial diffusion constant to test
-    fin_al = 1.20; % The final diffusion constant to test
+    fin_al = 1.01; % The final diffusion constant to test
     al_step = 0.01; % The increment step
     Stage = 1;
-    [Record_Data_Array, iter, tot_time] = Calc_R_Per_lnr_Deme_Function(...
+    [Record_Data_Array, iter, tot_time] = Calc_D_Per_r_Deme_Function(...
     F,ini_al,fin_al,al_step,deme_start,nl,Angle,Vo_max,DL);
     
     % Create a Table Out of Data Collected
-    
     T = array2table(Record_Data_Array,'VariableNames',{'D','Time','R_T_Diff_Con',...
-        'Var','Std_Dev','Ini_Pos','Final_Pos','Pos_Difference'})
+        'Std_Dev','Var','Ini_Pos','Final_Pos','Pos_Difference'})
     format short G
 
 file_title = '%.3f_to_%.3f_Diff_Conts_%.f_DataPts_%.f_Time.xlsx';

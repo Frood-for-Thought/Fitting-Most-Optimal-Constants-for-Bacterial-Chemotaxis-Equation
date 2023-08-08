@@ -18,12 +18,13 @@ for lnr = ini_al:al_step:fin_al
     
     pos = DL*deme_start; % Position on x-axis in µm
     pos_ini = DL*deme_start; % Initial position to calculate vd with
-    dt = 0.1;
+
     %% Start the Time Loop
     iter = 1;
+    dt = 0.1;
     % Go through several iterations to record all the data for this
     % diffusion constant
-    while iter <= 30001
+    while iter <= 30000
         % Go throught run-and-tumble algorithm
         tot_time = 1000;
         for t = 1:dt:tot_time % time is in sec
@@ -60,8 +61,8 @@ for lnr = ini_al:al_step:fin_al
         Record_Data_Array(n,1) = D; % Theoretical Diff. Const.
         Record_Data_Array(n,2) = t; % Length of Time of Algorithm
         Record_Data_Array(n,3) = lnr; % Current Run/Tumble Diff. Const.
-        Record_Data_Array(n,4) = 2*D*t; % Theoretical var = SD^2
-        Record_Data_Array(n,5) = sqrt(2*D*t); % Theor. S.D. = SD^2
+        Record_Data_Array(n,4) = sqrt(2*D*t); % Theor. S.D. = SD^2
+        Record_Data_Array(n,5) = 2*D*t; % Theoretical var = SD^2
         Record_Data_Array(n,6) = pos_ini; % Initial starting position
         Record_Data_Array(n,7) = pos; % Final position
         Record_Data_Array(n,8) = pos_ini - pos; % Position Difference
@@ -70,7 +71,7 @@ for lnr = ini_al:al_step:fin_al
         pos = DL*deme_start; % Position is reset on x-axis in µm
         iter = iter + 1; % Move on to the next iteration
         n = n + 1; % Move to the next row for Record_Data_Array
-    end
-end
+    end % while iter <= (number of iterations)
+end % for lnr = ini_al:al_step:fin_al
 
 end
