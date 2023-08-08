@@ -146,20 +146,20 @@ for deme_start = 10:100
     [RawData] = Calc_V_Per_Alpha_Deme_moreIter_Function(...
         Rtroc,F,vd_chemotaxis,ini_al,fin_al,al_step,deme_start,nl,Angle,Vo_max,xbias,Stage,DL);
 
-    Pos_Alpha_Array = [Pos_Alpha_Array; RawData]
+    Pos_Alpha_Array = [Pos_Alpha_Array; RawData];
+    T = array2table(Pos_Alpha_Array,...
+        'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'})
+    format short G
     if deme_start == 10
         break
     end
-%     T = array2table(Pos_Alpha_Array,...
-%         'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'})
-%     format short G
 end
 
 T = array2table(Pos_Alpha_Array,...
-    'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'})
+    'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'});
 format short G
 
-file_title = 'alpha_MaxC_%d_Grad_%.6f_raw_data.xlsx';
+file_title = 'alpha_MaxC_%d_Grad_%.6f_raw_data.xls';
 filename = sprintf(file_title,Max_Food_Conc,Grad);
 writetable(T,filename,'Sheet',1,'Range','A1')
 
