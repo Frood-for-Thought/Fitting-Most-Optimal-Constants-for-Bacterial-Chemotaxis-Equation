@@ -95,13 +95,7 @@ for alpha = ini_al:al_step:fin_al
         prob_up = prob_tum_up*ones(iter - 1, 1);
         prob_down = prob_tum_down*ones(iter - 1, 1);
         % Append data for iteration to place into RawData.
-        update(:,1) = position;
-        update(:,2) = alpha_con;
-        update(:,3) = theoryVel;
-        update(:,4) = transpose(Caculated_Ave_Vd_Array);
-        update(:,5) = prob_up;
-        update(:,6) = prob_down;
-%         update = [position al_col theoryVel transpose(Caculated_Ave_Vd_Array) prob_up prob_down];
+        update = [position alpha_con theoryVel transpose(Caculated_Ave_Vd_Array) prob_up prob_down];
         RawData = [RawData; update];
     end
     % Update Position in Alpha_Array
