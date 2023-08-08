@@ -1,0 +1,20 @@
+The program to execute is "Find_Alpha_RawData_Program.m".
+
+Find_Alpha_RawData_Program.m uses the results of "Calc_R_Per_Alpha_Deme_Gillespie_Function.m"
+to calculate raw data points for multiple alpha values per deme and records everything into
+a table to be exported by excel.
+
+Tumble_Angle_Function.m randomly finds the next angle the bacteria tumbles towards using the 
+tumble angle distribution it was given.
+
+Calc_V_Per_Alpha_Deme_Function.m is used to run the run and tumble algorithm to
+calculate the distance travelled using the temporal stimulation migration equation, and
+records datapoints to be used by Find_Alpha_RawData_Program.m.
+
+Calc_V_Per_Alpha_Deme_moreIter_Function.m is similar to "Calc_V_Per_Alpha_Deme_Function.m"
+but now generates the raw data and places it into a dataframe 
+for "Find_Alpha_RawData_Program.m" to put the dataframe into an output file.
+
+James Tursa (2023). UNINIT - Create an uninitialized variable (like ZEROS but faster) 
+(https://www.mathworks.com/matlabcentral/fileexchange/31362-uninit-create-an-uninitialized-variable-like-zeros-but-faster), 
+MATLAB Central File Exchange. Retrieved August 8, 2023. 

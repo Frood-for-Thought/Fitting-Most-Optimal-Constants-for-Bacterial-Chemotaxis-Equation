@@ -1,0 +1,11 @@
+
+Tumble_Angle_Function.m randomly finds the next angle the bacteria tumbles towards using the 
+average tumble angle distribution it was given
+
+Find_Diff_RawData_Program.m uses the results of "Calc_D_Per_r_Deme_Function.m"
+to calculate raw data points for multiple diffusion values per deme and records everything into
+a table to be exported by excel.
+
+Calc_D_Per_r_Deme_Function.m uses the run and tumble algorithm to
+calculate the distance travelled using the temporal stimulation migration equation, and
+records datapoints to be used by Find_Alpha_RawData_Program.m.
