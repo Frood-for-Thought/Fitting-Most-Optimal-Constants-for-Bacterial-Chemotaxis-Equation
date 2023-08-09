@@ -36,7 +36,7 @@ for alpha = ini_al:al_step:fin_al
     Caculated_Ave_Vd_Array = zeros();
     iter = 1;
     dt = 0.1; % s
-    while iter < 1000
+    while iter < 2000
         for t = 1:dt:1000 % time is in sec
 
             % Moving away from food.

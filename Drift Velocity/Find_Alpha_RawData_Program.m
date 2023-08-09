@@ -73,7 +73,7 @@ end
 %% Choose the Deme Position
 
 Pos_Alpha_Array = [];
-for deme_start = 10:100
+for deme_start = 1:100
     %% Begin Calculation
     ini_al = 100;
     fin_al = 9000;
