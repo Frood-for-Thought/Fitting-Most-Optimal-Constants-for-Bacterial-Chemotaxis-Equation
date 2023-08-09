@@ -13,7 +13,7 @@ RawData = [];
 for alpha = ini_al:al_step:fin_al
     
     %% The probability of Tumbling Up the Gradient
-    lnr = 1.10; % Diffusion constant
+    d = 1.09; % Diffusion constant
     
     %% Choose Which Section of Model to Analyze
     
@@ -41,9 +41,9 @@ for alpha = ini_al:al_step:fin_al
 
             % Moving away from food.
             if (90 <= Angle) && (Angle < 270)
-                Ptum = dt*exp(-lnr + alpha*Rtroc(i));
+                Ptum = dt*exp(-d + alpha*Rtroc(i));
             else % Moving towards food.
-                Ptum = dt*exp(-lnr - alpha*Rtroc(i));
+                Ptum = dt*exp(-d - alpha*Rtroc(i));
             end
 
             R_rt = rand();
@@ -84,8 +84,8 @@ for alpha = ini_al:al_step:fin_al
     end
         
     %% Record All the Data
-    prob_tum_up = dt*exp(-lnr - alpha*Rtroc(deme_start)); % prob tumbling up
-    prob_tum_down = dt*exp(-lnr + alpha*Rtroc(deme_start)); % prob tumbling down
+    prob_tum_up = dt*exp(-d - alpha*Rtroc(deme_start)); % prob tumbling up
+    prob_tum_down = dt*exp(-d + alpha*Rtroc(deme_start)); % prob tumbling down
     
     if (Stage > 2) % (mod(n,third_skip) == 0)
         % Fix values to store them into RawData as rows.
