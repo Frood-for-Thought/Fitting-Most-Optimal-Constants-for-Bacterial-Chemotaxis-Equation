@@ -72,7 +72,6 @@ end
 
 %% Choose the Deme Position
 
-% Pos_Alpha_Array = [0 0 0 0];
 Pos_Alpha_Array = [];
 for deme_start = 10:100
     %% Begin Calculation
@@ -161,9 +160,9 @@ for deme_start = 10:100
     writetable(T,filename,'Sheet',1,'Range','A1')
 
 
-    if deme_start == 10
-        break
-    end
+%     if deme_start == 10
+%         break
+%     end
 end
 
 % T = array2table(Pos_Alpha_Array,...
