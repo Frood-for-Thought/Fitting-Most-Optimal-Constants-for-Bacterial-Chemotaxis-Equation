@@ -27,7 +27,7 @@ deme_start = 50;
 
     %% Begin Calculation
     ini_al = 1.00; % The initial diffusion constant to test
-    fin_al = 1.01; % The final diffusion constant to test
+    fin_al = 1.20; % The final diffusion constant to test
     al_step = 0.01; % The increment step
     Stage = 1;
     [Record_Data_Array, iter, tot_time] = Calc_D_Per_r_Deme_Function(...
