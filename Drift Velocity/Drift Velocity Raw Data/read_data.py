@@ -66,7 +66,7 @@ def find_optimal_constant(describe_dataframe, dataframe, vel_data, lowest_tstat=
     alpha = dataframe.loc[0, 'alpha']
     for x in describe_dataframe.index.values:
         tstat, p = stats.ttest_1samp(dataframe[dataframe['alpha'] == x][vel_data],
-                                     popmean=dataframe.Theory_Vel[0])  # Center around theoretical velocity.
+                                     popmean=dataframe.Theory_Vel.mean())  # Center around theoretical velocity.
         if np.abs(tstat) < abs(lowest_tstat):
             alpha = x
             lowest_tstat = tstat
@@ -80,7 +80,7 @@ pd.set_option('display.max_columns', None)  # Show all the columns
 vel_col, alpha_col = get_titles(Alpha_Vel_Data)
 describe_diff_by_const, Alpha_Vel_Data = filter_data_describe(Alpha_Vel_Data, vel_col, alpha_col)
 print(describe_diff_by_const)
-print(Alpha_Vel_Data.Theory_Vel[0])
+print(Alpha_Vel_Data.Theory_Vel.mean())
 print(find_optimal_constant(describe_diff_by_const, Alpha_Vel_Data, vel_col))
 
 
