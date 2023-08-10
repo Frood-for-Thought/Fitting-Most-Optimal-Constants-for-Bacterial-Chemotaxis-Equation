@@ -13,7 +13,7 @@ RawData = [];
 for alpha = ini_al:al_step:fin_al
     
     %% The probability of Tumbling Up the Gradient
-    d = 1.09; % Diffusion constant
+    d = 1.16; % Diffusion constant
     
     %% Choose Which Section of Model to Analyze
     
