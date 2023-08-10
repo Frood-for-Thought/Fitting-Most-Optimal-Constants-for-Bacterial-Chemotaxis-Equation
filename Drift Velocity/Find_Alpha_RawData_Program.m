@@ -131,7 +131,7 @@ for deme_start = 1:100
 
     ini_al = alpha_start - 50;
     fin_al = alpha_start + 150;
-    if vd_chemotaxis(i) > 1
+    if vd_chemotaxis(deme_start) < 1
         al_step = 10;
     else
         al_step = 5;
@@ -161,6 +161,8 @@ for deme_start = 1:100
 
 
 %     if deme_start == 10
+%         deme_start
+%         vd_chemotaxis(deme_start)
 %         break
 %     end
 end
