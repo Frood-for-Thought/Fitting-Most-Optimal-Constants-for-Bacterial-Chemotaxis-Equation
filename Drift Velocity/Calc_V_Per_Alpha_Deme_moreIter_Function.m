@@ -50,9 +50,8 @@ for alpha = ini_al:al_step:fin_al
             if R_rt < Ptum
                 % If r < P_tum the bacteria stays in the Tumble State
                 [Next_Angle] = Tumble_Angle_Function(F);
-                % Turning at Rotation = Next_Angle/t_tum
-                                % Therefore, 
-                Angle = Angle + Next_Angle; %(Next_Angle*kt_r)*dt;
+                % Turning at Rotation = Next_Angle
+                Angle = Angle + Next_Angle;
                 Angle = round(Angle);
                 if Angle >= 360
                     Angle = Angle - 360;
