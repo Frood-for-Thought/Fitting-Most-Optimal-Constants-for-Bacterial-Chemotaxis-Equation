@@ -1,8 +1,9 @@
 The program to execute is "Find_Alpha_RawData_Program.m".
 
-Find_Alpha_RawData_Program.m uses the results of "Calc_R_Per_Alpha_Deme_Gillespie_Function.m"
-to calculate raw data points for multiple alpha values per deme and records everything into
-a table to be exported by excel.
+Find_Alpha_RawData_Program.m uses the results of "Calc_V_Per_Alpha_Deme_Function.m" and 
+"Calc_V_Per_Alpha_Deme_moreIter_Function" to calculate raw data points for multiple alpha 
+values per deme and records everything into tables to be exported by excel which contain
+the deme position, a range of alpha values, and a range of recorded velocities for the alpha values.
 
 Tumble_Angle_Function.m randomly finds the next angle the bacteria tumbles towards using the 
 tumble angle distribution it was given.

@@ -151,6 +151,7 @@ for deme_start = 1:100
 %         'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'})
 %     format short G
 
+% In this case 'position' are the deme positions.
     T = array2table(Pos_Alpha_Array,...
         'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'});
     format short G
