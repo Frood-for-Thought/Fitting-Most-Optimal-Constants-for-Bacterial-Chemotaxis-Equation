@@ -9,3 +9,16 @@ a table to be exported by excel.
 Calc_D_Per_r_Deme_Function.m uses the run and tumble algorithm to
 calculate the distance travelled using the temporal stimulation migration equation, and
 records datapoints to be used by Find_Alpha_RawData_Program.m.
+
+input_parameters.xlsx are used by initializing parameters in the "Find_Diff_RawData_Program".
+
+The output of "Find_Diff_RawData_Program.m" generates the file,
+"1.000_to_1.200_Diff_Conts_30001_DataPts_1000_Time.xlsx" which gives a list of 21 diffusion
+constants from 1.00 to 1.20 with 30001 datapoints each.
+
+creating_analyzing_df creates a dataframe out of the file "1.000_to_1.200_Diff_Conts_30001_DataPts_1000_Time.xlsx" 
+so that the file does not have to be continuously reloaded every time the program is run.
+The diffusion data is grouped per diffusion constant and made into histograms, 
+which then are cleaned to remove outliers or means which are outside a confidence interval.
+The (unitless) diffusion constant accepted is one which has the lowest Bhattacharyya Distance from the theoretical 
+Gaussian diffusion distribution, (D = 112 microns/s^2, t=1000s), and one which passes the Shapiro-Wilk test.
