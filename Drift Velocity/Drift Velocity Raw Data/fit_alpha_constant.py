@@ -78,8 +78,17 @@ class FitAlphaConstant:
         return alpha, lowest_tstat, pvalue
 
 
-i = 30
-file = f'pos_{i}_alpha_values_MaxC_60000_Grad_0.000405.xlsx'
-find_alpha = FitAlphaConstant(file)
-a, _, _ = find_alpha.find_optimal_constant()
-print(a)
+alpha_curve_fit = []
+for i in range(100):
+    j = i + 1  # Match MATLAB base 1
+    file = f'pos_{j}_alpha_values_MaxC_60000_Grad_0.000405.xlsx'
+    find_alpha = FitAlphaConstant(file)
+    a, _, _ = find_alpha.find_optimal_constant()
+    alpha_curve_fit.append(a)
+alpha_curve_fit = pd.DataFrame(alpha_curve_fit)
+alpha_curve_fit = alpha_curve_fit.reset_index(drop=False)  # Create position for deme
+alpha_curve_fit[alpha_curve_fit.columns[0]] += 1  # Match MATLAB base 1 for deme position 1
+alpha_curve_fit = alpha_curve_fit.rename(columns={alpha_curve_fit.columns[0]: "deme", alpha_curve_fit.columns[1]: "alpha"})
+print(alpha_curve_fit)
+alpha_curve_fit.to_csv("closest_alpha_const.csv", index=False)
+
