@@ -81,14 +81,14 @@ class FitAlphaConstant:
 alpha_curve_fit = []
 for i in range(100):
     j = i + 1  # Match MATLAB base 1
-    file = f'pos_{j}_alpha_values_MaxC_60000_Grad_0.000405.xlsx'
-    find_alpha = FitAlphaConstant(file)
-    a, _, _ = find_alpha.find_optimal_constant()
-    alpha_curve_fit.append(a)
-alpha_curve_fit = pd.DataFrame(alpha_curve_fit)
+    file = f'pos_{j}_alpha_values_MaxC_60000_Grad_0.000405.xlsx'  # Read file to analyze.
+    find_alpha = FitAlphaConstant(file)  # Make instance using file.
+    a, _, _ = find_alpha.find_optimal_constant()  # Take the alpha value from that instance.
+    alpha_curve_fit.append(a)  # Put alpha value into dataframe.
+alpha_curve_fit = pd.DataFrame(alpha_curve_fit)  # Dataframe of alpha values closest to theoretical velocity.
 alpha_curve_fit = alpha_curve_fit.reset_index(drop=False)  # Create position for deme
 alpha_curve_fit[alpha_curve_fit.columns[0]] += 1  # Match MATLAB base 1 for deme position 1
 alpha_curve_fit = alpha_curve_fit.rename(columns={alpha_curve_fit.columns[0]: "deme", alpha_curve_fit.columns[1]: "alpha"})
 print(alpha_curve_fit)
-alpha_curve_fit.to_csv("closest_alpha_const.csv", index=False)
+alpha_curve_fit.to_csv("closest_alpha_const.csv", index=False)  # Save dataframe to csv file.
 
