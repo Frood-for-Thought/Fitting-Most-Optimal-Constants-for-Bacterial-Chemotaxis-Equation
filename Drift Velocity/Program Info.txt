@@ -15,6 +15,7 @@ Calc_V_Per_Alpha_Deme_moreIter_Function.m is similar to "Calc_V_Per_Alpha_Deme_F
 but now generates the raw data and places it into a dataframe 
 for "Find_Alpha_RawData_Program.m" to put the dataframe into an output file.
 
-James Tursa (2023). UNINIT - Create an uninitialized variable (like ZEROS but faster) 
-(https://www.mathworks.com/matlabcentral/fileexchange/31362-uninit-create-an-uninitialized-variable-like-zeros-but-faster), 
-MATLAB Central File Exchange. Retrieved August 8, 2023. 
+Run_and_Tumble_Algorithm_Temp_Stim_Chemotaxis.m reproduces the Temporal Stimulation Migration 
+but is now reworked to include the fractional amount of receptor bound using the
+receptor sensitivity and alpha values curve fit from "alpha_values_MaxC_60000_Grad_0.000405_curve_fit"
+to reproduce work from work from Sourjik et al and Yu Hai Tu et al.
