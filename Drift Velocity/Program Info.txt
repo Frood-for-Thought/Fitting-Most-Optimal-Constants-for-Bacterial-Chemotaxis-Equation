@@ -27,3 +27,6 @@ takes the raw data generated, cleans the outliers, and then calculates the alpha
 drift velocity closest to the theoretical.  
 The file alpha_values_MaxC_60000_Grad_0.000405_curve_fit are the alpha values calculated by fit_alpha_constant
 with a polynomial regressive analysis curve fit.
+
+pos_v_time_MaxC_60000_Grad_0.000405 files are plots of position vs time to be analyzed in the "plotting" file.
+The pos_v_time files were outputs from the "Run_and_Tumble_Algorithm_Temp_Stim_Chemotaxis" file.
