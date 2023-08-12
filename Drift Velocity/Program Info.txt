@@ -1,4 +1,6 @@
-The program to execute is "Find_Alpha_RawData_Program.m".
+The program to execute to generate the data to analyze is "Find_Alpha_RawData_Program.m". 
+The data includes a list of potential alpha values per position and several velocity datappoints
+from running a Monte Carlo simulation.
 
 Find_Alpha_RawData_Program.m uses the results of "Calc_V_Per_Alpha_Deme_Function.m" and 
 "Calc_V_Per_Alpha_Deme_moreIter_Function" to calculate raw data points for multiple alpha 
