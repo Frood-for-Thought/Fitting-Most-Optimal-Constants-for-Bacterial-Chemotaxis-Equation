@@ -126,7 +126,8 @@ for x = 0:0.0175:pi
     F(n) = 0.5*(1+cos(x))*sin(x);
     n = n + 1;
 end
-Start_Angle = round(360*rand());
+% Start_Angle = round(360*rand());
+Start_Angle = 0;
 Angle = Start_Angle;
 
 %% Run and Tumble Algorithm
@@ -151,7 +152,7 @@ v = VideoWriter('BacRTMig.avi');
 open(v)
 video_Condition = 0;
 
-for t = 1:dt:25000 % time is in sec
+for t = 0:dt:35000 % time is in sec
     video_Condition = 1;
 %     kr_t = kCCW_CW;
 %     kt_r = kCW_CCW;
@@ -203,9 +204,9 @@ for t = 1:dt:25000 % time is in sec
         plot(vd_chemotaxis,'b', 'LineWidth',2)
         xlim([1 nl])
         line(xlim, [0 0])
-        title('Position Along Gradient [axis i = 310 µm]')
+        title(sprintf('Position Along x-axis = %.2f µm', pos))
         ylabel ({'Theoretical Drift Vel. [µm/s] (blue line)';'Actual R-T Position [µm] (purple circle)'}, 'fontsize', 13)
-        X_lab = sprintf('Position = %.2f µm', pos);
+        X_lab = 'Deme Position No. (One Deme Length = 310 µm)';
         xlabel (X_lab);
             yyaxis right
             plot(xbias,'r')
