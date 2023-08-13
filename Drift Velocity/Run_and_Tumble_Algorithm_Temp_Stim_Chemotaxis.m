@@ -91,6 +91,7 @@ file_title = 'alpha_values_MaxC_60000_Grad_0.000405_curve_fit.csv';
 filename = sprintf(file_title,Max_Food_Conc,Grad);
 A = xlsread(filename);
 format short g
+% Make sure A(:,row) contains the correct row with the polynomial curve fit
 alpha = transpose(A(:,4));
 lnr = 1.16;
 for i = 1:nl
