@@ -1,4 +1,6 @@
 
+plotting.ipynb generates plots using the following data:
+
 The "input_parameters" file is used by the MATLAB programs to run the simulations.  It contains information on the
 food gradient, theoretical drift velocity, run speed, and the bacteria receptor activity to the attractant (food).
 
