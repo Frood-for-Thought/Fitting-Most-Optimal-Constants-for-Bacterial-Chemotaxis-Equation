@@ -18,11 +18,6 @@ Calc_V_Per_Alpha_Deme_moreIter_Function.m is similar to "Calc_V_Per_Alpha_Deme_F
 but now generates the raw data and places it into a dataframe 
 for "Find_Alpha_RawData_Program.m" to put the dataframe into an output file.
 
-Run_and_Tumble_Algorithm_Temp_Stim_Chemotaxis.m reproduces the Temporal Stimulation Migration 
-but is now reworked to include the fractional amount of receptor bound using the
-receptor sensitivity and alpha values curve fit from "alpha_values_MaxC_60000_Grad_0.000405_curve_fit"
-to reproduce work from work from Sourjik et al and Yu Hai Tu et al.
-
 The Python program "fit_alpha_constant" takes the raw data generated, cleans the outliers, 
 then calculates the alpha value with the drift velocity closest to the theoretical, 
 and puts all the results into the file "closest_alpha_const.csv".
@@ -30,3 +25,7 @@ and puts all the results into the file "closest_alpha_const.csv".
 alpha_MaxC_60000_Grad_000405_CurveFit.m is the MATLAB program used for polynomial regressive analysis using
 the file "closest_alpha_const.csv", which exports the polynomial curve fit results into the file
 "alpha_values_MaxC_60000_Grad_0.000405_curve_fit".
+
+Run_and_Tumble_Algorithm_Temp_Stim_Chemotaxis.m reproduces the Temporal Stimulation Migration 
+but is now reworked to include the alpha values curve fit from "alpha_values_MaxC_60000_Grad_0.000405_curve_fit.csv",
+to multiply by the bacteria's receptor sensitivity.
