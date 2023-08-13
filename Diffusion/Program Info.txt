@@ -22,3 +22,7 @@ The diffusion data is grouped per diffusion constant and made into histograms,
 which then are cleaned to remove outliers or means which are outside a confidence interval.
 The (unitless) diffusion constant accepted is one which has the lowest Bhattacharyya Distance from the theoretical 
 Gaussian diffusion distribution, (D = 112 microns/s^2, t=1000s), and one which passes the Shapiro-Wilk test.
+The file plotting is looked into in VS Code.
+
+creating_analyzing_df_table is a python file which generates the same table as "creating_analyzing_df".
+Graphing and plotting are further done in the "creating_analyzing_df" file.
