@@ -1,4 +1,4 @@
-The program to execute to generate the data to analyze is "Find_Alpha_RawData_Program.m". 
+The program to execute in order to generate the data to analyze is "Find_Alpha_RawData_Program.m". 
 The data includes a list of potential alpha values per position and several velocity datappoints
 from running a Monte Carlo simulation.
 
