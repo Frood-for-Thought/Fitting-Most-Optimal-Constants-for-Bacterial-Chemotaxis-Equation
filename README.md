@@ -74,9 +74,9 @@ and a standard deviation of
 ```math
 \sqrt{2Dt}
 ```
-,
+with
 ```math
-D = 112 microns/s^2, and t = 1000s
+D = 112 "microns/"s^2, "t" = 1000s
 ```
 - The program "creating_analyzing_df_table.py" finds a unitless run-and-tumble diffusion constant with a dataset that passes the Shapiro-Wilk test,
 and has the lowest Bhattacharyya Distance from the theoretical Gaussian diffusion distribution.
