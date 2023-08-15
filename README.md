@@ -70,7 +70,7 @@ with a range from 1.00 to 1.20.  Each diffusion constant has 30001 datapoints ea
 It then cleans the datapoints which are greater than 3 x standard_deviation from the mean, (the mean being 0), 
 and removes any datasets which have a mean greater than 2 x standard_error.
 - The theoretical distirbution for bacterial diffusion is a Gaussian probability distribution with a mean of 0, 
-and a standard deviation of
+and a standard deviation of:
 ```math
 \sqrt{2Dt}
 ```
@@ -102,7 +102,7 @@ which exports the polynomial curve fit results into the file "alpha_values_MaxC_
 
 with 
 ```math
-Adjusted R^2=0.99906
+Adjusted\ R^2=0.99906
 ```
 
 Coefficients (with 95% confidence bounds):
