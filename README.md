@@ -72,7 +72,7 @@ a mean greater than 2*standard_error.
 - The theoretical distirbution for bacterial diffusion is a Gaussian probability distribution with a mean of 0, 
 and a standard deviation of
 ```math
-sqrt{2Dt}
+\sqrt{2Dt}
 ```
 , with D = 112 microns/s^2, and t=1000s.
 - The program "creating_analyzing_df_table.py" finds a unitless run-and-tumble diffusion constant with a dataset that passes the Shapiro-Wilk test,
@@ -93,7 +93,9 @@ several alpha values, and stores the data into a file for each position.
 which exports the polynomial curve fit results into the file "alpha_values_MaxC_60000_Grad_0.000405_curve_fit".
 - The polynomial regressive curve fit:
 
-```α(x)=b0 +b1*x^9  + b2*x^8+ b3*x^7  + b4*x^6  +b5x^5  + b6*x^4  + b7*x^3  + b8*x^2  + b9*x```
+```math
+α(x) = b0 + b1x^9 + b2x^8 + b3x^7 + b4x^6 + b5x^5 + b6x^4 + b7x^3 + b8x^2 + b9x
+```
 
 with 
 ```math
