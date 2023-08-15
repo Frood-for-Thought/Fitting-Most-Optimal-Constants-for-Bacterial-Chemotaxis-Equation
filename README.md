@@ -67,8 +67,8 @@ The pos_v_time files were outputs from the "Run_and_Tumble_Algorithm_Temp_Stim_C
 - Datapoints in the file "1.000_to_1.200_Diff_Conts_30001_DataPts_1000_Time.xlsx" are grouped according to 21 diffusion constants 
 with a range from 1.00 to 1.20.  Each diffusion constant has 30001 datapoints each.
 - The Python program "creating_analyzing_df_table.py" calculates all the descriptive statistics for the diffusion data for each constant.
-It then cleans the datapoints which are greater than 3*standard_deviation from the mean, (the mean being 0), and removes any datasets which have 
-a mean greater than 2*standard_error. 
+It then cleans the datapoints which are greater than 3 x standard_deviation from the mean, (the mean being 0), 
+and removes any datasets which have a mean greater than 2 x standard_error.
 - The theoretical distirbution for bacterial diffusion is a Gaussian probability distribution with a mean of 0, 
 and a standard deviation of
 ```math
@@ -89,7 +89,7 @@ compared to d = 1.15, (t-stat = -0.65, p-value = 0.51).  (A larger p-value means
 - For each position in the model, Find_Alpha_RawData_Program.m generates datasets of 2001 drift velocities for
 several alpha values, and stores the data into a file for each position.
 - The Python program "fit_alpha_constant.py" has a class which takes the raw data generated and calculates the descriptive statistics for each alpha dataset
- and cleans the outliers which are 3*standard_deviation from the mean.
+ and cleans the outliers which are 3 x standard_deviation from the mean.
 - The class then then calculates the alpha value with the drift velocity closest to the theoretical by doing a one sample t-test.
 - A loop goes over all files and puts all the alpha values per position with a distribution closest to the theoretical drift velocity into the file "closest_alpha_const.csv".
 - alpha_MaxC_60000_Grad_000405_CurveFit.m is the MATLAB program used for polynomial regressive analysis using the file "closest_alpha_const.csv", 
