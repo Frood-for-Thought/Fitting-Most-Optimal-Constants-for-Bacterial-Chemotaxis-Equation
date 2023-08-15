@@ -3,8 +3,10 @@ Bacteria use run-and-tumble mechanics to migrate towards food.  Running is when 
 with a constant speed.  Tumbling is when a rotation of the flagella cause the bacteria to stop and redirect itself for the next run.
 This is how bacteria move around.  Given an attractant, (a food gradient), bacteria tumble less moving towards food and tumble more moving away.
 This directed migration is called chemotaxis and and the speed bacteria travel directed up the food gradient is called the drift velocity.
-For this simulation a drift velocity is known.  The goal is to use Data Analysis to filter out a list of potential constants per position 
-for use in a stochastic run and tumble algorithm.
+For this simulation a drift velocity per position is known for a given food gradient.  
+The goal is to use Data Analysis to filter out a list of potential constants per position for use in a stochastic run-and-tumble algorithm.
+The constants control the probability of tumbling moving up and down the gradient.
+By fitting the right constants, the random run-and-tumble algorithm velocity will resemble the known theoretical drift velocity.
 
 ## Programs
 Each Folder has a file, "Program Info.txt", to describe all files and their uses in the project.
@@ -73,18 +75,27 @@ but an additional t-test showed that d = 1.16 had a t-statistic closer to the th
 compared to d = 1.15, (t-stat = -0.65, p-value = 0.51).  (A larger p-value means the null hypothesis is not pased and the two distributions are similar).
 
 ### Alpha Constants
-- For each position in the 
+- A drift velocity per position is known for a given food gradient.  
+- For each position in the model, Find_Alpha_RawData_Program.m generates datasets of 2001 drift velocities for
+several alpha values, and stores the data into a file for each position.
+- The Python program "fit_alpha_constant.py" has a class which takes the raw data generated and calculates the descriptive statistics for each alpha dataset
+ and cleans the outliers which are 3*standard_deviation from the mean.
+- The class then then calculates the alpha value with the drift velocity closest to the theoretical by doing a one sample t-test.
+- A loop goes over all files and puts all the alpha values per position with a distribution closest to the theoretical drift velocity into the file "closest_alpha_const.csv".
+- alpha_MaxC_60000_Grad_000405_CurveFit.m is the MATLAB program used for polynomial regressive analysis using the file "closest_alpha_const.csv", 
+which exports the polynomial curve fit results into the file "alpha_values_MaxC_60000_Grad_0.000405_curve_fit".
 
-- Find_Alpha_RawData_Program.m uses the results of "Calc_V_Per_Alpha_Deme_Function.m" and 
-"Calc_V_Per_Alpha_Deme_moreIter_Function" to calculate raw data points for multiple alpha 
-values per deme and records everything into tables which contain the deme position, 
-a range of alpha values, and a range of recorded velocities for the alpha values.
-- The Python program "fit_alpha_constant" takes the raw data generated, cleans the outliers, 
-then calculates the alpha value with the drift velocity closest to the theoretical, 
-and puts all the results into the file "closest_alpha_const.csv".
-- alpha_MaxC_60000_Grad_000405_CurveFit.m is the MATLAB program used for polynomial regressive analysis using
-the file "closest_alpha_const.csv", which exports the polynomial curve fit results into the file
-"alpha_values_MaxC_60000_Grad_0.000405_curve_fit".
-- Run_and_Tumble_Algorithm_Temp_Stim_Chemotaxis.m reproduces the run-and-tumble chemotaxis migration of bacteria
-as they are drawn towards a food sources, but is now reworked to include the alpha values curve fit 
-from "alpha_values_MaxC_60000_Grad_0.000405_curve_fit".
+### Run and Tumble Algorithm Trial Analysis
+- Run_and_Tumble_Algorithm_Temp_Stim_Chemotaxis.m reproduces the run-and-tumble chemotaxis migration of bacteria using the fitted constants.
+- The file "plotting.ipynb" analyzes several trial runs of the algorithm.
+- For each trial, data of position vs time is gathered and drift velocity is calculated by taking the derivative.
+- A histogram of the drift velocities show the distribution to be skewed towards the boundaries, with the mode near the positive boundary.
+- For each trial the max and min velocity was the run speed of the bacteria.
+- The modes for each trial have a variation of around 0.000000000001 µm/s, but small variations in the velocity distribution near the boundaries
+is a good measure of how soon the bacteria will reach the end of the trial.
+- The more skewed the polarization the greater the mean and median, and the faster the trial will end.
+- There is higher variability at low food concentration starting from position 0 to 6200 µm, as this represents more random diffusion.
+- By taking the position vs time data after 6200 µm and calculating an average slope of the speed, the drift velocity vs time plot resembles the 
+theoretical drift velocity.
+- However, as the drift velocity decreases, the difference in tumble probability going up the gradient and going down becomes smaller, 
+so there is greater variability than at higher velocities.
