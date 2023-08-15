@@ -1,5 +1,10 @@
 # Fitting-Most-Optimal-Constants-for-Bacterial-Chemotaxis-Equation
-Using Data Analysis to filter out a list of potential constants per position for use in a stochastic run and tumble algorithm.
+Bacteria use run-and-tumble mechanics to migrate towards food.  Running is when a bacteria's flagella propel it in a certain direction
+with a constant speed.  Tumbling is when a rotation of the flagella cause the bacteria to stop and redirect itself for the next run.
+This is how bacteria move around.  Given an attractant, (a food gradient), bacteria tumble less moving towards food and tumble more moving away.
+This directed migration is called chemotaxis and and the speed bacteria travel directed up the food gradient is called the drift velocity.
+For this simulation a drift velocity is known.  The goal is to use Data Analysis to filter out a list of potential constants per position 
+for use in a stochastic run and tumble algorithm.
 
 ## Programs
 Each Folder has a file, "Program Info.txt", to describe all files and their uses in the project.
@@ -53,7 +58,7 @@ It also contains a polynomial regressive analysis curve fit created by "alpha_Ma
 The pos_v_time files were outputs from the "Run_and_Tumble_Algorithm_Temp_Stim_Chemotaxis" file in the Drift Velocity Folder.
 
 ## Data Analysis
-### Diffusion
+### Diffusion Constant
 - Datapoints in the file "1.000_to_1.200_Diff_Conts_30001_DataPts_1000_Time.xlsx" are grouped according to 21 diffusion constants 
 with a range from 1.00 to 1.20.  Each diffusion constant has 30001 datapoints each.
 - The Python program "creating_analyzing_df_table.py" calculates all the descriptive statistics for the diffusion data for each constant.
@@ -67,3 +72,19 @@ and has the lowest Bhattacharyya Distance from the theoretical Gaussian diffusio
 but an additional t-test showed that d = 1.16 had a t-statistic closer to the theoretical, (t-stat = -0.34, p-value = 0.73), 
 compared to d = 1.15, (t-stat = -0.65, p-value = 0.51).  (A larger p-value means the null hypothesis is not pased and the two distributions are similar).
 
+### Alpha Constants
+- For each position in the 
+
+- Find_Alpha_RawData_Program.m uses the results of "Calc_V_Per_Alpha_Deme_Function.m" and 
+"Calc_V_Per_Alpha_Deme_moreIter_Function" to calculate raw data points for multiple alpha 
+values per deme and records everything into tables which contain the deme position, 
+a range of alpha values, and a range of recorded velocities for the alpha values.
+- The Python program "fit_alpha_constant" takes the raw data generated, cleans the outliers, 
+then calculates the alpha value with the drift velocity closest to the theoretical, 
+and puts all the results into the file "closest_alpha_const.csv".
+- alpha_MaxC_60000_Grad_000405_CurveFit.m is the MATLAB program used for polynomial regressive analysis using
+the file "closest_alpha_const.csv", which exports the polynomial curve fit results into the file
+"alpha_values_MaxC_60000_Grad_0.000405_curve_fit".
+- Run_and_Tumble_Algorithm_Temp_Stim_Chemotaxis.m reproduces the run-and-tumble chemotaxis migration of bacteria
+as they are drawn towards a food sources, but is now reworked to include the alpha values curve fit 
+from "alpha_values_MaxC_60000_Grad_0.000405_curve_fit".
