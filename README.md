@@ -70,7 +70,11 @@ with a range from 1.00 to 1.20.  Each diffusion constant has 30001 datapoints ea
 It then cleans the datapoints which are > 3*standard_deviation from the mean, (the mean being 0), and removes any datasets which have 
 a mean greater than 2*standard_error. 
 - The theoretical distirbution for bacterial diffusion is a Gaussian probability distribution with a mean of 0, 
-and a standard deviation of $\sqrt{2*D*t}$, with D = 112 microns/s^2, and t=1000s.
+and a standard deviation of
+```math
+sqrt{2*D*t}
+```
+, with D = 112 microns/s^2, and t=1000s.
 - The program "creating_analyzing_df_table.py" finds a unitless run-and-tumble diffusion constant with a dataset that passes the Shapiro-Wilk test,
 and has the lowest Bhattacharyya Distance from the theoretical Gaussian diffusion distribution.
 - The diffusion constant closest to theoretical is d = 1.16, with a Bhattacharyya Distance = 0.000002.  The constant was tied with d = 1.15,
@@ -88,20 +92,25 @@ several alpha values, and stores the data into a file for each position.
 - alpha_MaxC_60000_Grad_000405_CurveFit.m is the MATLAB program used for polynomial regressive analysis using the file "closest_alpha_const.csv", 
 which exports the polynomial curve fit results into the file "alpha_values_MaxC_60000_Grad_0.000405_curve_fit".
 - The polynomial regressive curve fit:
-```α(x)=b0 +b1*x^9  + b2*x^8+ b3*x^7  + b4*x^6  +b5x^5  + b6*x^4  + b7*x^3  + b8*x^2  + b9*x```
-with Adjusted R^2=0.99906.
-Coefficients (with 95% confidence bounds):
-       b1 =  -9.323e-12  (-1.175e-11, -6.897e-12)
-       b2 =   4.688e-09  (3.519e-09, 5.858e-09)
-       b3 =  -1.002e-06  (-1.241e-06, -7.622e-07)
-       b4 =   0.0001191  (9.193e-05, 0.0001462)
-       b5 =   -0.008684  (-0.01055, -0.006821)
-       b6 =      0.4052  (0.3258, 0.4847)
-       b7 =      -12.28  (-14.36, -10.2)
-       b8 =       240.6  (208.9, 272.3)
-       b9 =       -2922  (-3173, -2671)
-       b0 =   1.819e+04  (1.741e+04, 1.896e+04)
 
+```α(x)=b0 +b1*x^9  + b2*x^8+ b3*x^7  + b4*x^6  +b5x^5  + b6*x^4  + b7*x^3  + b8*x^2  + b9*x```
+
+with 
+```math
+Adjusted R^2=0.99906
+```.
+
+Coefficients (with 95% confidence bounds):
+- b0 =   1.819e+04  (1.741e+04, 1.896e+04)
+- b1 =  -9.323e-12  (-1.175e-11, -6.897e-12)
+- b2 =   4.688e-09  (3.519e-09, 5.858e-09)
+- b3 =  -1.002e-06  (-1.241e-06, -7.622e-07)
+- b4 =   0.0001191  (9.193e-05, 0.0001462)
+- b5 =   -0.008684  (-0.01055, -0.006821)
+- b6 =      0.4052  (0.3258, 0.4847)
+- b7 =      -12.28  (-14.36, -10.2)
+- b8 =       240.6  (208.9, 272.3)
+- b9 =       -2922  (-3173, -2671)
 
 ### Run and Tumble Algorithm Trial Analysis
 - Run_and_Tumble_Algorithm_Temp_Stim_Chemotaxis.m reproduces the run-and-tumble chemotaxis migration of bacteria using the fitted constants.
