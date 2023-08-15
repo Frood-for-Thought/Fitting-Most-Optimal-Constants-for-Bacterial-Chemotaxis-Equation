@@ -10,6 +10,9 @@ By fitting the right constants, the random run-and-tumble algorithm velocity wil
 
 ## Programs
 Each Folder has a file, "Program Info.txt", to describe all files and their uses in the project.
+For data Analysis the project used Python and its libraries (Pandas, Scipy, Numpy, Matplotlib, Plotly, Seaborn), and MATLAB
+For plotting the project used Jupyter Notebooks and Tableau.
+A description of how the files were used is also given in Process.
 
 ## Process
 ### Diffusion Folder
@@ -84,6 +87,21 @@ several alpha values, and stores the data into a file for each position.
 - A loop goes over all files and puts all the alpha values per position with a distribution closest to the theoretical drift velocity into the file "closest_alpha_const.csv".
 - alpha_MaxC_60000_Grad_000405_CurveFit.m is the MATLAB program used for polynomial regressive analysis using the file "closest_alpha_const.csv", 
 which exports the polynomial curve fit results into the file "alpha_values_MaxC_60000_Grad_0.000405_curve_fit".
+- The polynomial regressive curve fit:
+```α(x)=b0 +b1*x^9  + b2*x^8+ b3*x^7  + b4*x^6  +b5x^5  + b6*x^4  + b7*x^3  + b8*x^2  + b9*x```
+with Adjusted R^2=0.99906.
+Coefficients (with 95% confidence bounds):
+       b1 =  -9.323e-12  (-1.175e-11, -6.897e-12)
+       b2 =   4.688e-09  (3.519e-09, 5.858e-09)
+       b3 =  -1.002e-06  (-1.241e-06, -7.622e-07)
+       b4 =   0.0001191  (9.193e-05, 0.0001462)
+       b5 =   -0.008684  (-0.01055, -0.006821)
+       b6 =      0.4052  (0.3258, 0.4847)
+       b7 =      -12.28  (-14.36, -10.2)
+       b8 =       240.6  (208.9, 272.3)
+       b9 =       -2922  (-3173, -2671)
+       b0 =   1.819e+04  (1.741e+04, 1.896e+04)
+
 
 ### Run and Tumble Algorithm Trial Analysis
 - Run_and_Tumble_Algorithm_Temp_Stim_Chemotaxis.m reproduces the run-and-tumble chemotaxis migration of bacteria using the fitted constants.
