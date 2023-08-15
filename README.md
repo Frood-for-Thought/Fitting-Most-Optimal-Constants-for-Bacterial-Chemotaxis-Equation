@@ -73,7 +73,8 @@ a mean greater than 2*standard_error.
 and a standard deviation of
 ```math
 \sqrt{2Dt}
-```,
+```
+,
 ```math
 D = 112 microns/s^2, and t = 1000s
 ```
