@@ -67,7 +67,7 @@ The pos_v_time files were outputs from the "Run_and_Tumble_Algorithm_Temp_Stim_C
 - Datapoints in the file "1.000_to_1.200_Diff_Conts_30001_DataPts_1000_Time.xlsx" are grouped according to 21 diffusion constants 
 with a range from 1.00 to 1.20.  Each diffusion constant has 30001 datapoints each.
 - The Python program "creating_analyzing_df_table.py" calculates all the descriptive statistics for the diffusion data for each constant.
-It then cleans the datapoints which are > 3*standard_deviation from the mean, (the mean being 0), and removes any datasets which have 
+It then cleans the datapoints which are greater than 3*standard_deviation from the mean, (the mean being 0), and removes any datasets which have 
 a mean greater than 2*standard_error. 
 - The theoretical distirbution for bacterial diffusion is a Gaussian probability distribution with a mean of 0, 
 and a standard deviation of
