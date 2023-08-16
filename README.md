@@ -10,8 +10,11 @@ By fitting the right constants, the random run-and-tumble algorithm velocity wil
 
 ## Programs
 Each Folder has a file, "Program Info.txt", to describe all files and their uses in the project.
+
 For data Analysis the project used Python and its libraries (Pandas, Scipy, Numpy, Matplotlib, Plotly, Seaborn), and MATLAB
+
 For plotting the project used Jupyter Notebooks and Tableau.
+
 A description of how the files were used is also given in Process.
 
 ## Process
