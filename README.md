@@ -1,4 +1,5 @@
 # Fitting-Most-Optimal-Constants-for-Bacterial-Chemotaxis-Equation
+## Lighthouse Labs Capstone Project
 Bacteria use run-and-tumble mechanics to migrate towards food.  Running is when a bacteria's flagella propel it in a certain direction
 with a constant speed.  Tumbling is when a rotation of the flagella cause the bacteria to stop and redirect itself for the next run.
 This is how bacteria move around.  Given an attractant, (a food gradient), bacteria tumble less moving towards food and tumble more moving away.
