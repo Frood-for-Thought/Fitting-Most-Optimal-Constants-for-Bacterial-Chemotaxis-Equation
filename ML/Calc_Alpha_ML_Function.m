@@ -25,14 +25,11 @@ end
 Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 
 %% Start the Time Loop
-Caculated_Ave_Vd_Array = zeros();
+M = 0;
+Calculated_Ave_Vd_Array = zeros();
 iter = 1;
 dt = 0.1; % s
 while iter < 2000
-
-    % Loss function
-    L = 
-
     for t = 1:dt:1000 % time is in sec
         % Moving away from food.
         if (90 <= Angle) && (Angle < 270)
@@ -71,12 +68,15 @@ while iter < 2000
             break
         end
     end
-    Caculated_Ave_Vd = (pos - pos_ini)/t;
-
+    Calculated_Ave_Vd = (pos - pos_ini)/t;
+    Calculated_Ave_Vd_Array(iter) = Calculated_Ave_Vd;
     pos = DL*deme_start; % Position is reset on x-axis in µm
-    iter = iter + 1; % iteration for run
+    iter = iter + 1;
 end
 
+Calculated_Ave_Vd_Array
+M = mean(Calculated_Ave_Vd_Array) % Mean velocity for alpha
+return
 %% Record All the Data
 prob_tum_up = dt*exp(-d - alpha*Rtroc(deme_start)); % prob tumbling up
 prob_tum_down = dt*exp(-d + alpha*Rtroc(deme_start)); % prob tumbling down
