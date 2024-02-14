@@ -26,21 +26,11 @@ end
 Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 
 %% Start the Time Loop
-for n = 1:130 % start training loop
+for n = 1:100 % start training loop
     M = 0;
     Calculated_Ave_Vd_Array = zeros();
-    if n < 50
-        max_iter = 1000;
-        TV = 10;
-    elseif (n > 50) && (n < 100)
-        max_iter = 2000;
-        TV = 5;
-    else
-        max_iter = 4000;
-        TV = 1;
-    end
     iter = 1;
-    while iter < max_iter
+    while iter < 4000
         for t = 1:dt:1000 % time is in sec
             % Moving away from food.
             if (90 <= Angle) && (Angle < 270)
@@ -86,11 +76,11 @@ for n = 1:130 % start training loop
     end
 
 %     M = mean(Calculated_Ave_Vd_Array) % Mean velocity for alpha
-    n
-    stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array))
+%     stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array))
 
     [dL] = Loss_Function_Derivative(...
         Average_Theory_Vel, Calculated_Ave_Vd_Array);
+    TV = 2;
     h = TV*dL
     alpha = alpha - h
 
