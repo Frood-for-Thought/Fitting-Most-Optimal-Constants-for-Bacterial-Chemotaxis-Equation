@@ -78,8 +78,9 @@ Calculated_Ave_Vd_Array
 M = mean(Calculated_Ave_Vd_Array) % Mean velocity for alpha
 stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array))
 
-[L] = Loss_Function(...
-    Average_Theory_Vel, Calculated_Ave_Vd_Array, alpha)
+[dL] = Loss_Function_Derivative(...
+    Average_Theory_Vel, Calculated_Ave_Vd_Array);
+dL
 return
 %% Record All the Data
 prob_tum_up = dt*exp(-d - alpha*Rtroc(deme_start)); % prob tumbling up
