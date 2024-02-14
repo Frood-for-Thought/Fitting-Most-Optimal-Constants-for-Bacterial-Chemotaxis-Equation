@@ -1,5 +1,5 @@
-function [RawData] = Calc_Alpha_ML_Function(...
-    Rtroc,F,vd_chemotaxis,ini_al,fin_al,al_step,deme_start,nl,Angle,Vo_max,xbias,Stage,DL)
+function [Pos_Alpha_Array] = Calc_Alpha_ML_Function(...
+    Rtroc,F,vd_chemotaxis,alpha_start,deme_start,nl,Angle,Vo_max,xbias,DL)
 
 %% Set up arrays to contain alpha values and average speeds for each value
 % This program cycles through each deme to first give a range of alpha
@@ -9,7 +9,7 @@ function [RawData] = Calc_Alpha_ML_Function(...
 % the theoretical value.  The closest value is matched to later be used to
 % in curve fitting for the variable alpha value.
 
-RawData = [];
+Pos_Alpha_Array = [];
 for alpha = ini_al:al_step:fin_al
     
     %% The probability of Tumbling Up the Gradient
@@ -95,7 +95,7 @@ for alpha = ini_al:al_step:fin_al
         prob_down = prob_tum_down*ones(iter - 1, 1);
         % Append data for iteration to place into RawData.
         update = [position alpha_con theoryVel transpose(Caculated_Ave_Vd_Array) prob_up prob_down];
-        RawData = [RawData; update];
+        Pos_Alpha_Array = [Pos_Alpha_Array; update];
     end
     % Update Position in Alpha_Array
 end % for alpha = ini_al:al_step:fin_al

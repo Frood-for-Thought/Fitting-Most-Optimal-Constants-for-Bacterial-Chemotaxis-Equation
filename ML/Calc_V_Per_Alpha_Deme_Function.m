@@ -17,7 +17,7 @@ for alpha = ini_al:al_step:fin_al
 %     alpha
     
     %% The probability of Tumbling Up the Gradient
-    lnr = 1.16; % Diffusion constant
+    d = 1.16; % Diffusion constant
     
     %% Choose Which Section of Model to Analyze
     
@@ -54,9 +54,9 @@ for alpha = ini_al:al_step:fin_al
 
                     % Moving away from food.
                 if (90 <= Angle) && (Angle < 270)
-                    Ptum = dt*exp(-lnr + alpha*Rtroc(i));
+                    Ptum = dt*exp(-d + alpha*Rtroc(i));
                 else % Moving towards food.
-                    Ptum = dt*exp(-lnr - alpha*Rtroc(i));
+                    Ptum = dt*exp(-d - alpha*Rtroc(i));
                 end
 
                 R_rt = rand();
@@ -99,8 +99,8 @@ for alpha = ini_al:al_step:fin_al
     end
     %% Record All the Data
     Record_Data_Array(n,4) = M;
-    Record_Data_Array(n,6) = dt*exp(-lnr - alpha*Rtroc(deme_start)); % prob tumbling up
-    Record_Data_Array(n,7) = dt*exp(-lnr + alpha*Rtroc(deme_start)); % prob tumbling down
+    Record_Data_Array(n,6) = dt*exp(-d - alpha*Rtroc(deme_start)); % prob tumbling up
+    Record_Data_Array(n,7) = dt*exp(-d + alpha*Rtroc(deme_start)); % prob tumbling down
     
     skip = 5;
     next_skip = 3;
