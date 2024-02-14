@@ -126,7 +126,6 @@ for deme_start = 30:N
     Data_Row = I
 %     Data_Row = 1 + (I-1)*next_skip
     alpha_start = Record_Data_Array(Data_Row,1)
-    return
     
     %% Given the range of alphas, use ML Model to find the most optimum
 
