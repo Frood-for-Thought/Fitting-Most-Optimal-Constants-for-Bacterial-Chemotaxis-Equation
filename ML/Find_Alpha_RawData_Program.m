@@ -73,7 +73,11 @@ end
 %% Choose the Deme Position
 
 Pos_Alpha_Array = [];
-for deme_start = 30:31
+N = 31;
+for deme_start = 30:N
+    if deme_start == N
+        return
+    end
     %% Begin Calculation
     ini_al = 100;
     fin_al = 9000;
@@ -101,13 +105,6 @@ for deme_start = 30:31
     % Similar to the previous calculation but to further pinpoint a
     % range for use in stage 3.
     
-    if alpha_start > 200
-        ini_al = alpha_start - 200;
-        fin_al = alpha_start + 800;
-    else
-        ini_al = 50;
-        fin_al = alpha_start + 800;
-    end
     al_step = 50;
     Stage = 2;
     [Record_Data_Array,Vel_Diff,skip,next_skip,third_skip] = Calc_V_Per_Alpha_Deme_Function(...
@@ -129,13 +126,6 @@ for deme_start = 30:31
 
     %% Given the range of alphas, use ML Model to find the most optimum
 
-    ini_al = alpha_start - 50;
-    fin_al = alpha_start + 150;
-    if vd_chemotaxis(deme_start) < 1
-        al_step = 10;
-    else
-        al_step = 5;
-    end
     
     % Now that the range is more determined, put this into a new file.
     % The file will generate a list of velocities over several iterations
