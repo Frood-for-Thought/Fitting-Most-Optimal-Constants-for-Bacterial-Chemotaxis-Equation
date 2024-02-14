@@ -105,6 +105,8 @@ for deme_start = 30:N
     % Similar to the previous calculation but to further pinpoint a
     % range for use in stage 3.
     
+    ini_al = alpha_start;
+    fin_al = alpha_start + 1000;
     al_step = 50;
     Stage = 2;
     [Record_Data_Array,Vel_Diff,skip,next_skip] = Calc_V_Per_Alpha_Deme_Function(...

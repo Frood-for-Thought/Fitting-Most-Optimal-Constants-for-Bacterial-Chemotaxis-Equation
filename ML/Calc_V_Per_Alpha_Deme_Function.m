@@ -95,7 +95,7 @@ for alpha = ini_al:al_step:fin_al
             pos = DL*deme_start; % Position is reset on x-axis in µm
             iter = iter + 1;
         end
-        M = mean(Caculated_Ave_Vd_Array);
+        M = mean(Caculated_Ave_Vd_Array); % Mean velocity for alpha
     end
     %% Record All the Data
     Record_Data_Array(n,4) = M;
@@ -115,9 +115,9 @@ for alpha = ini_al:al_step:fin_al
             end
         end
         j = j + 1;
-    elseif (mod(n,next_skip) == 0) && (Stage > 1) % Stage 2 skip = 3
-        AveVel_div_Skip = sum(Record_Data_Array((n-next_skip+1):n,4))/next_skip;
-        Vel_Diff(j) = abs(AveVel_div_Skip - Average_Theory_Vel);
+    elseif (Stage > 1) % Stage 2
+        % Find a rough velocity difference between Mean run and the theoretical
+        Vel_Diff(j) = abs(M - Average_Theory_Vel);
         j = j + 1;
     end
     
