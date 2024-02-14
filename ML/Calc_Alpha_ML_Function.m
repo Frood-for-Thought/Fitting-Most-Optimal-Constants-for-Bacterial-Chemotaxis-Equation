@@ -26,18 +26,18 @@ end
 Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 
 %% Start the Time Loop
-for n = 1:130 % start training loop
+for n = 1:70 % start training loop
     M = 0;
     Calculated_Ave_Vd_Array = zeros();
-    if n <= 50
+    if n <= 30
         max_iter = 1000;
         TV = 10;
-    elseif (n > 50) && (n < 100)
+    elseif (n > 30) && (n < 60)
         max_iter = 2000;
         TV = 5;
     else
-        max_iter = 4000;
-        TV = 1;
+        max_iter = 6000;
+        TV = 5;
     end
     iter = 1;
     while iter < max_iter
@@ -91,8 +91,8 @@ for n = 1:130 % start training loop
 
     [dL] = Loss_Function_Derivative(...
         Average_Theory_Vel, Calculated_Ave_Vd_Array);
-    h = TV*dL
-    alpha = alpha - h
+    h = - TV*dL
+    alpha = alpha + h
 
 end % for n = ... end training loop
 return
