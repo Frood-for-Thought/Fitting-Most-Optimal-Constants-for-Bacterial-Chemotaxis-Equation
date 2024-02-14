@@ -28,6 +28,7 @@ Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 %% Start the Time Loop
 for n = 1:70 % start training loop
     M = 0;
+    rec_index = 1; % index for "record_alpha_when_close_to_value"
     Calculated_Ave_Vd_Array = zeros();
     if n <= 30
         max_iter = 1000;
@@ -36,8 +37,8 @@ for n = 1:70 % start training loop
         max_iter = 2000;
         TV = 5;
     else
-        max_iter = 6000;
-        TV = 5;
+        max_iter = 4000;
+        TV = 1;
     end
     iter = 1;
     while iter < max_iter
@@ -85,16 +86,27 @@ for n = 1:70 % start training loop
         iter = iter + 1;
     end
 
-%     M = mean(Calculated_Ave_Vd_Array) % Mean velocity for alpha
+    M = mean(Calculated_Ave_Vd_Array); % Mean velocity for alpha
     n
-    stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array))
+    Vel_Diff = M - Average_Theory_Vel
+    stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array));
 
     [dL] = Loss_Function_Derivative(...
         Average_Theory_Vel, Calculated_Ave_Vd_Array);
     h = - TV*dL
     alpha = alpha + h
+    
+    record_alpha_when_close_to_value = zeros();
+    
+    if (abs(Vel_Diff) < 0.001)
+        record_alpha_when_close_to_value(rec_index) = alpha;
+        rec_index = rec_index + 1;
+    end
 
 end % for n = ... end training loop
+
+record_alpha_when_close_to_value
+
 return
 %% Record All the Data
 prob_tum_up = dt*exp(-d - alpha*Rtroc(deme_start)); % prob tumbling up
