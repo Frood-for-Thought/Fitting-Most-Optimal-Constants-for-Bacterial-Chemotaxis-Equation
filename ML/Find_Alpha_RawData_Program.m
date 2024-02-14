@@ -73,8 +73,8 @@ end
 %% Choose the Deme Position
 
 Pos_Alpha_Array = [];
-N = 51;
-for deme_start = 50:N
+N = 81;
+for deme_start = 80:N
     if deme_start == N
         return
     end
