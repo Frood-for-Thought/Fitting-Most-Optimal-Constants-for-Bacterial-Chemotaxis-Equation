@@ -123,26 +123,20 @@ for deme_start = 30:N
     [m,I] = min(Vel_Diff)
     Data_Row = 1 + (I-1)*next_skip
     alpha_start = Record_Data_Array(Data_Row,1)
-
+    
     %% Given the range of alphas, use ML Model to find the most optimum
 
-    [RawData] = Calc_Alpha_ML_Function(...
-        Rtroc,F,vd_chemotaxis,ini_al,fin_al,al_step,deme_start,nl,Angle,Vo_max,xbias,Stage,DL);
-    Pos_Alpha_Array = RawData;
-    
-%     Pos_Alpha_Array = [Pos_Alpha_Array; RawData];
-%     T = array2table(Pos_Alpha_Array,...
-%         'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'})
-%     format short G
+    [Pos_Alpha_Array] = Calc_Alpha_ML_Function(...
+        Rtroc,F,vd_chemotaxis,alpha_start,deme_start,nl,Angle,Vo_max,xbias,DL);
 
 % In this case 'position' are the deme positions.
     T = array2table(Pos_Alpha_Array,...
         'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'});
     format short G
 
-    file_title = 'pos_%d_alpha_values_MaxC_%d_Grad_%.6f.xlsx';
-    filename = sprintf(file_title, deme_start,Max_Food_Conc,Grad);
-    writetable(T,filename,'Sheet',1,'Range','A1')
+%     file_title = 'pos_%d_alpha_values_MaxC_%d_Grad_%.6f.xlsx';
+%     filename = sprintf(file_title, deme_start,Max_Food_Conc,Grad);
+%     writetable(T,filename,'Sheet',1,'Range','A1')
 end
 
 % T = array2table(Pos_Alpha_Array,...
