@@ -81,6 +81,9 @@ stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array))
 [dL] = Loss_Function_Derivative(...
     Average_Theory_Vel, Calculated_Ave_Vd_Array);
 dL
+alpha
+TV = 10;
+alpha = alpha - TV*dL
 return
 %% Record All the Data
 prob_tum_up = dt*exp(-d - alpha*Rtroc(deme_start)); % prob tumbling up
