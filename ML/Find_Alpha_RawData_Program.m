@@ -83,7 +83,7 @@ for deme_start = 30:N
     fin_al = 9000;
     al_step = 100;
     Stage = 1;
-    [Record_Data_Array,Vel_Diff,skip,next_skip,third_skip] = Calc_V_Per_Alpha_Deme_Function(...
+    [Record_Data_Array,Vel_Diff,skip] = Calc_V_Per_Alpha_Deme_Function(...
         Rtroc,F,vd_chemotaxis,ini_al,fin_al,al_step,deme_start,nl,Angle,Vo_max,xbias,Stage,DL);
     
     % Create a Table Out of Data Collected.
@@ -107,7 +107,7 @@ for deme_start = 30:N
     
     al_step = 50;
     Stage = 2;
-    [Record_Data_Array,Vel_Diff,skip,next_skip,third_skip] = Calc_V_Per_Alpha_Deme_Function(...
+    [Record_Data_Array,Vel_Diff,skip,next_skip] = Calc_V_Per_Alpha_Deme_Function(...
         Rtroc,F,vd_chemotaxis,ini_al,fin_al,al_step,deme_start,nl,Angle,Vo_max,xbias,Stage,DL);
 
     % Display the Function Data
@@ -126,13 +126,7 @@ for deme_start = 30:N
 
     %% Given the range of alphas, use ML Model to find the most optimum
 
-    
-    % Now that the range is more determined, put this into a new file.
-    % The file will generate a list of velocities over several iterations
-    % for each alpha value and then output that list.
-    % The data is then appended into Pos_Alpha_Array.
-    Stage = 3;
-    [RawData] = Calc_V_Per_Alpha_Deme_moreIter_Function(...
+    [RawData] = Calc_Alpha_ML_Function(...
         Rtroc,F,vd_chemotaxis,ini_al,fin_al,al_step,deme_start,nl,Angle,Vo_max,xbias,Stage,DL);
     Pos_Alpha_Array = RawData;
     
@@ -149,13 +143,6 @@ for deme_start = 30:N
     file_title = 'pos_%d_alpha_values_MaxC_%d_Grad_%.6f.xlsx';
     filename = sprintf(file_title, deme_start,Max_Food_Conc,Grad);
     writetable(T,filename,'Sheet',1,'Range','A1')
-
-
-%     if deme_start == 10
-%         deme_start
-%         vd_chemotaxis(deme_start)
-%         break
-%     end
 end
 
 % T = array2table(Pos_Alpha_Array,...

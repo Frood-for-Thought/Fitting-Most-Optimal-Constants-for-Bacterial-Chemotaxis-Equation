@@ -17,7 +17,7 @@ for alpha = ini_al:al_step:fin_al
 %     alpha
     
     %% The probability of Tumbling Up the Gradient
-    lnr = 1.10; % Diffusion constant
+    lnr = 1.16; % Diffusion constant
     
     %% Choose Which Section of Model to Analyze
     
@@ -104,8 +104,7 @@ for alpha = ini_al:al_step:fin_al
     
     skip = 5;
     next_skip = 3;
-    third_skip = 2;
-    if (mod(n,skip) == 0) && (Stage < 2)
+    if (mod(n,skip) == 0) && (Stage < 2) % Stage 1 skip = 5
         AveVel_div_Skip = sum(Record_Data_Array((n-skip+1):n,4))/skip;
         Vel_Diff(j) = abs(AveVel_div_Skip - Average_Theory_Vel);
         if j > 2
@@ -116,7 +115,7 @@ for alpha = ini_al:al_step:fin_al
             end
         end
         j = j + 1;
-    elseif (mod(n,next_skip) == 0) && (Stage > 1) && (Stage < 3)
+    elseif (mod(n,next_skip) == 0) && (Stage > 1) % Stage 2 skip = 3
         AveVel_div_Skip = sum(Record_Data_Array((n-next_skip+1):n,4))/next_skip;
         Vel_Diff(j) = abs(AveVel_div_Skip - Average_Theory_Vel);
         j = j + 1;
