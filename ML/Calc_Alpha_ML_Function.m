@@ -29,7 +29,7 @@ Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 for n = 1:130 % start training loop
     M = 0;
     Calculated_Ave_Vd_Array = zeros();
-    if n < 50
+    if n <= 50
         max_iter = 1000;
         TV = 10;
     elseif (n > 50) && (n < 100)
