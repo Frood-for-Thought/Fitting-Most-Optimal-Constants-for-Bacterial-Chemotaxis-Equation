@@ -25,10 +25,14 @@ for i = deme_start:deme_end
 end
 Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 
-%% Start the Time Loop
-for n = 1:70 % start training loop
+%% Start the ML Loop
+
+% This array is meant to record alpha values close to the theoretical.
+rec_index = 1; % index for "record_alpha_when_close_to_value"
+record_alpha_when_close_to_value = zeros();
+
+for n = 1:100 % start training loop
     M = 0;
-    rec_index = 1; % index for "record_alpha_when_close_to_value"
     Calculated_Ave_Vd_Array = zeros();
     if n <= 30
         max_iter = 1000;
@@ -89,14 +93,12 @@ for n = 1:70 % start training loop
     M = mean(Calculated_Ave_Vd_Array); % Mean velocity for alpha
     n
     Vel_Diff = M - Average_Theory_Vel
-    stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array));
+    stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array))
 
     [dL] = Loss_Function_Derivative(...
         Average_Theory_Vel, Calculated_Ave_Vd_Array);
     h = - TV*dL
     alpha = alpha + h
-    
-    record_alpha_when_close_to_value = zeros();
     
     if (abs(Vel_Diff) < 0.001)
         record_alpha_when_close_to_value(rec_index) = alpha;
@@ -106,6 +108,7 @@ for n = 1:70 % start training loop
 end % for n = ... end training loop
 
 record_alpha_when_close_to_value
+ave_alpha_close_to_theory = mean(record_alpha_when_close_to_value)
 
 return
 %% Record All the Data
