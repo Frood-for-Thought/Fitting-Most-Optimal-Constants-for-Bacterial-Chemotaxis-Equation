@@ -3,6 +3,7 @@ function [Pos_Alpha_Array] = Calc_Alpha_ML_Function(...
 
 %% Set up arrays to contain alpha values and average speeds for each value
 alpha = alpha_start
+alpha = 800
     
 %% The probability of Tumbling Up the Gradient
 d = 1.16; % Diffusion constant
@@ -33,12 +34,12 @@ record_alpha_when_close_to_value = zeros();
 for n = 1:100 % start training loop
     M = 0;
     Calculated_Ave_Vd_Array = zeros();
-    if n <= 30
+    if n <= 40
         max_iter = 1000;
         TV = 30;
-    elseif (n > 60) && (n < 90)
+    elseif (n > 40) && (n < 70)
         max_iter = 2000;
-        TV = 10;
+        TV = 30;
     else
         max_iter = 4000;
         TV = 10;
@@ -100,7 +101,7 @@ for n = 1:100 % start training loop
     h = - TV*dL
     alpha = alpha + h
     
-    if (abs(Vel_Diff) < 0.001) && (n > 100)
+    if (abs(Vel_Diff) < 0.001)
         record_alpha_when_close_to_value(rec_index) = alpha;
         rec_index = rec_index + 1;
     end
