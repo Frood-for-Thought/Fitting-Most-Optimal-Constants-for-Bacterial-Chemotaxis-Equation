@@ -3,7 +3,7 @@ function [Pos_Alpha_Array] = Calc_Alpha_ML_Function(...
 
 %% Set up arrays to contain alpha values and average speeds for each value
 alpha = alpha_start
-alpha = 800
+alpha = 1
     
 %% The probability of Tumbling Up the Gradient
 d = 1.16; % Diffusion constant
@@ -31,18 +31,18 @@ Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 rec_index = 1; % index for "record_alpha_when_close_to_value"
 record_alpha_when_close_to_value = zeros();
 
-for n = 1:100 % start training loop
+for n = 1:80 % start training loop
     M = 0;
     Calculated_Ave_Vd_Array = zeros();
-    if n <= 40
+    if n <= 30
         max_iter = 1000;
         TV = 30;
-    elseif (n > 40) && (n < 70)
+    elseif (n > 30) && (n < 60)
         max_iter = 2000;
         TV = 30;
     else
         max_iter = 4000;
-        TV = 10;
+        TV = 30;
     end
     iter = 1;
     while iter < max_iter
@@ -92,18 +92,20 @@ for n = 1:100 % start training loop
 
     M = mean(Calculated_Ave_Vd_Array); % Mean velocity for alpha
     n
-    Vel_Diff = M - Average_Theory_Vel
+    Vel_Diff = M - Average_Theory_Vel;
+    h = - 2*TV*Vel_Diff
     stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array));
     TV_2_SE = 2*TV*stderror
 
-    [dL] = Loss_Function_Derivative(...
-        Average_Theory_Vel, Calculated_Ave_Vd_Array);
-    h = - TV*dL
+%     [dL] = Loss_Function_Derivative(...
+%         Average_Theory_Vel, Calculated_Ave_Vd_Array);
+%     h = - TV*dL
     alpha = alpha + h
     
-    if (abs(Vel_Diff) < 0.001)
+    if (abs(h) < 0.001)
         record_alpha_when_close_to_value(rec_index) = alpha;
         rec_index = rec_index + 1;
+        return
     end
 
 end % for n = ... end training loop
