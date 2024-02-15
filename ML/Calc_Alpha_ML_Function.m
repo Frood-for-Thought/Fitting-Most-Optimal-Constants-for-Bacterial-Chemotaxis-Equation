@@ -3,7 +3,6 @@ function [Pos_Alpha_Array] = Calc_Alpha_ML_Function(...
 
 %% Set up arrays to contain alpha values and average speeds for each value
 alpha = alpha_start
-alpha = 850
     
 %% The probability of Tumbling Up the Gradient
 d = 1.16; % Diffusion constant
