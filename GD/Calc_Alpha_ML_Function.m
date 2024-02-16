@@ -3,12 +3,12 @@ function [Pos_Alpha_Array] = Calc_Alpha_ML_Function(...
 
 %% Set up arrays to contain alpha values and average speeds for each value
 alpha = alpha_start
-alpha = 1
+alpha = 1150
     
 %% The probability of Tumbling Up the Gradient
 d = 1.16; % Diffusion constant
 dt = 0.1; % s time step
-loss = NaN;
+loss_x_SE = NaN;
 vel_diff_final = 100;
 alpha_final = 0;
 
@@ -40,7 +40,7 @@ for n = 1:90 % start training loop
         max_iter = 2000;
         TV = 30;
     else
-        max_iter = 4000;
+        max_iter = 6000;
         TV = 30;
     end
     iter = 1;
@@ -95,7 +95,7 @@ for n = 1:90 % start training loop
     stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array));
     
     if n > 60
-        loss = (Vel_Diff)^2;
+        loss_x_SE = [(2*TV*Vel_Diff)^2]*stderror
     end
     
     h = - 2*TV*Vel_Diff
@@ -111,9 +111,9 @@ for n = 1:90 % start training loop
     
     alpha = alpha + h
     
-    if (loss < vel_diff_final) && (n > 60) && (abs(TV_2_SE) > abs(h))
+    if (loss_x_SE < vel_diff_final) && (n > 60) && (abs(TV_2_SE) > abs(h))
         alpha_final = alpha
-        vel_diff_final = loss
+        vel_diff_final = loss_x_SE
     end
 
 end % for n = ... end training loop
