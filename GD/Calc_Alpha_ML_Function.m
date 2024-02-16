@@ -8,6 +8,9 @@ alpha = 1
 %% The probability of Tumbling Up the Gradient
 d = 1.16; % Diffusion constant
 dt = 0.1; % s time step
+ttest = NaN;
+ttest_final = 100;
+alpha_final = 0;
 
 %% Choose Which Section of Model to Analyze
 pos = DL*deme_start; % Position on x-axis in µm
@@ -27,22 +30,18 @@ Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 
 %% Start the ML Loop
 
-% This array is meant to record alpha values close to the theoretical.
-rec_index = 1; % index for "record_alpha_when_close_to_value"
-record_alpha_when_close_to_value = zeros();
-
 for n = 1:80 % start training loop
     M = 0;
     Calculated_Ave_Vd_Array = zeros();
     if n <= 30
         max_iter = 1000;
-        TV = 30;
+        TV = 80;
     elseif (n > 30) && (n < 60)
         max_iter = 2000;
         TV = 30;
     else
         max_iter = 4000;
-        TV = 30;
+        TV = 1;
     end
     iter = 1;
     while iter < max_iter
@@ -97,21 +96,17 @@ for n = 1:80 % start training loop
     stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array));
     TV_2_SE = 2*TV*stderror
 
-%     [dL] = Loss_Function_Derivative(...
-%         Average_Theory_Vel, Calculated_Ave_Vd_Array);
-%     h = - TV*dL
     alpha = alpha + h
     
-    if (abs(h) < 0.001)
-        record_alpha_when_close_to_value(rec_index) = alpha;
-        rec_index = rec_index + 1;
-        return
+    if (ttest < ttest_final) || (isnan(ttest))
+        alpha_final = alpha
+        ttest_final = ttest
     end
 
 end % for n = ... end training loop
 
-record_alpha_when_close_to_value
-ave_alpha_close_to_theory = mean(record_alpha_when_close_to_value)
+alpha_final
+ttest_final
 
 return
 %% Record All the Data
