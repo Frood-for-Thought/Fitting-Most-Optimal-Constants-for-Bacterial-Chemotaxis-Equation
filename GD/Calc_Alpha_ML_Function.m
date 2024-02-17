@@ -3,13 +3,12 @@ function [Pos_Alpha_Array] = Calc_Alpha_ML_Function(...
 
 %% Set up arrays to contain alpha values and average speeds for each value
 alpha = alpha_start
-alpha = 1150
-    
+
 %% The probability of Tumbling Up the Gradient
 d = 1.16; % Diffusion constant
 dt = 0.1; % s time step
-loss_x_SE = NaN;
-vel_diff_final = 100;
+loss = NaN;
+loss_final = 100;
 alpha_final = 0;
 
 %% Choose Which Section of Model to Analyze
@@ -30,18 +29,23 @@ Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 
 %% Start the ML Loop
 
-for n = 1:90 % start training loop
+for n = 1:80 % start training loop
     M = 0;
     Calculated_Ave_Vd_Array = zeros();
-    if n <= 30
+    if n <= 20
         max_iter = 1000;
-        TV = 70;
-    elseif (n > 30) && (n < 60)
+%         TV = 70;
+        TV = 1/(100*Rtroc(deme_start));
+    elseif (n > 20) && (n <= 40)
         max_iter = 2000;
-        TV = 30;
+%         TV = 30;
+        TV = 1/(200*Rtroc(deme_start));
+    elseif (n > 40) && (n < 60)
+        max_iter = 4000;
+        TV = 1/(300*Rtroc(deme_start));
     else
-        max_iter = 6000;
-        TV = 30;
+        max_iter = 10000;
+        TV = 1/(300*Rtroc(deme_start));
     end
     iter = 1;
     while iter < max_iter
@@ -95,31 +99,23 @@ for n = 1:90 % start training loop
     stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array));
     
     if n > 60
-        loss_x_SE = [(2*TV*Vel_Diff)^2]*stderror
+        loss = [(2*TV*Vel_Diff)^2]
     end
     
     h = - 2*TV*Vel_Diff
     TV_2_SE = 2*TV*stderror
     
-    if (n > 60) && (abs(TV_2_SE) > abs(h))
-        if h < 0
-            h = h + TV_2_SE
-        elseif h > 0
-            h = h - TV_2_SE
-        end
-    end
-    
     alpha = alpha + h
     
-    if (loss_x_SE < vel_diff_final) && (n > 60) && (abs(TV_2_SE) > abs(h))
+    if (loss < loss_final) && (n > 60) && (abs(TV_2_SE) > abs(h))
         alpha_final = alpha
-        vel_diff_final = loss_x_SE
+        loss_final = loss
     end
 
 end % for n = ... end training loop
 
 alpha_final
-vel_diff_final
+loss_final
 
 return
 %% Record All the Data
