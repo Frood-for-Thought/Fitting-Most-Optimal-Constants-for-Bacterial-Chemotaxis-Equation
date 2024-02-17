@@ -29,16 +29,14 @@ Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 
 %% Start the ML Loop
 
-for n = 1:80 % start training loop
+for n = 1:90 % start training loop
     M = 0;
     Calculated_Ave_Vd_Array = zeros();
     if n <= 20
         max_iter = 1000;
-%         TV = 70;
         TV = 1/(100*Rtroc(deme_start));
     elseif (n > 20) && (n <= 40)
         max_iter = 2000;
-%         TV = 30;
         TV = 1/(200*Rtroc(deme_start));
     elseif (n > 40) && (n < 60)
         max_iter = 4000;
@@ -101,15 +99,17 @@ for n = 1:80 % start training loop
     if n > 60
         loss = [(2*TV*Vel_Diff)^2]
     end
+    if (loss < loss_final) && (n > 60) && (abs(TV_2_SE) > abs(h))
+        alpha_final = alpha
+        loss_final = loss
+    end
     
     h = - 2*TV*Vel_Diff
     TV_2_SE = 2*TV*stderror
     
     alpha = alpha + h
-    
-    if (loss < loss_final) && (n > 60) && (abs(TV_2_SE) > abs(h))
-        alpha_final = alpha
-        loss_final = loss
+    if alpha < 0
+        alpha = 1;
     end
 
 end % for n = ... end training loop
