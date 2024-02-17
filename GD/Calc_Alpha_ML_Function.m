@@ -28,9 +28,11 @@ end
 Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
 
 %% Start the ML Loop
+% This array is meant to record alpha values close to the theoretical.
+rec_index = 1; % index for "record_alpha_when_close_to_value"
+record_alpha_when_close_to_value = zeros();
 
-for n = 1:90 % start training loop
-    M = 0;
+for n = 1:80 % start training loop
     Calculated_Ave_Vd_Array = zeros();
     if n <= 20
         max_iter = 1000;
@@ -103,7 +105,11 @@ for n = 1:90 % start training loop
         alpha_final = alpha
         loss_final = loss
     end
-    
+    if (n > 70)
+        record_alpha_when_close_to_value(rec_index) = alpha;
+        rec_index = rec_index + 1;
+    end
+
     h = - 2*TV*Vel_Diff
     TV_2_SE = 2*TV*stderror
     
@@ -111,11 +117,15 @@ for n = 1:90 % start training loop
     if alpha < 0
         alpha = 1;
     end
-
 end % for n = ... end training loop
 
 alpha_final
 loss_final
+% Bias the end of the array with alpha_final.
+record_alpha_when_close_to_value(rec_index) = alpha_final;
+record_alpha_when_close_to_value
+ave_alpha_close_to_theory = mean(record_alpha_when_close_to_value)
+med_alpha_close_to_theory = median(record_alpha_when_close_to_value)
 
 return
 %% Record All the Data
