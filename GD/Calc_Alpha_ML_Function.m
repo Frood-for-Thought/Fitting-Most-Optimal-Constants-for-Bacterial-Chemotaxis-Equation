@@ -1,5 +1,5 @@
 function [Pos_Alpha_Array] = Calc_Alpha_ML_Function(...
-    Rtroc,F,vd_chemotaxis,alpha_start,deme_start,nl,Angle,Vo_max,xbias,DL)
+    Rtroc,F,vd_chemotaxis,alpha_start,deme_start,nl,Angle,Vo_max,xbias,DL, Pos_Alpha_Array)
 
 %% Set up arrays to contain alpha values and average speeds for each value
 alpha = alpha_start
@@ -42,10 +42,10 @@ for n = 1:80 % start training loop
         TV = 1/(200*Rtroc(deme_start));
     elseif (n > 40) && (n < 60)
         max_iter = 4000;
-        TV = 1/(300*Rtroc(deme_start));
+        TV = 1/(200*Rtroc(deme_start));
     else
         max_iter = 10000;
-        TV = 1/(300*Rtroc(deme_start));
+        TV = 1/(200*Rtroc(deme_start));
     end
     iter = 1;
     while iter < max_iter
@@ -94,15 +94,25 @@ for n = 1:80 % start training loop
     end % while iter < max_iter
 
     M = mean(Calculated_Ave_Vd_Array); % Mean velocity for alpha
+    if n < 2
+        calc_velocity_final = M;
+    end
     Ave_Vel_Diff = M - Average_Theory_Vel;
     stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array));
     
+    n
     if n > 60
         loss = mean((Calculated_Ave_Vd_Array - Average_Theory_Vel).^2)
+        if n < 61 % Get reference values when close to the theoretical.
+            alpha_final = alpha;
+            loss_final = loss;
+            calc_velocity_final = M;
+        end
     end
     if (loss < loss_final) && (n > 60) && (abs(TV_2_SE) > abs(h))
         alpha_final = alpha
         loss_final = loss
+        calc_velocity_final = M
     end
     if (n > 70)
         record_alpha_when_close_to_value(rec_index) = alpha;
@@ -125,22 +135,19 @@ record_alpha_when_close_to_value(rec_index) = alpha_final;
 record_alpha_when_close_to_value
 ave_alpha_close_to_theory = mean(record_alpha_when_close_to_value)
 med_alpha_close_to_theory = median(record_alpha_when_close_to_value)
+percent_error_difference = abs(calc_velocity_final - Average_Theory_Vel)/Average_Theory_Vel;
 
-return
 %% Record All the Data
 prob_tum_up = dt*exp(-d - alpha*Rtroc(deme_start)); % prob tumbling up
 prob_tum_down = dt*exp(-d + alpha*Rtroc(deme_start)); % prob tumbling down
 
-if (Stage > 2) % (mod(n,third_skip) == 0)
-    % Fix values to store them into RawData as rows.
-    position = deme_start*ones(iter - 1, 1);
-    alpha_con = alpha*ones(iter - 1, 1);
-    theoryVel = Average_Theory_Vel*ones(iter - 1, 1);
-    prob_up = prob_tum_up*ones(iter - 1, 1);
-    prob_down = prob_tum_down*ones(iter - 1, 1);
-    % Append data for iteration to place into RawData.
-    update = [position alpha_con theoryVel transpose(Caculated_Ave_Vd_Array) prob_up prob_down];
-    Pos_Alpha_Array = [Pos_Alpha_Array; update];
-end
+% Fix values to store them into RawData as rows.
+position = deme_start;
+theoryVel = Average_Theory_Vel;
+prob_up = prob_tum_up;
+prob_down = prob_tum_down;
+% Append data for iteration to place into RawData.
+update = [position alpha_final theoryVel calc_velocity_final percent_error_difference loss_final prob_up prob_down];
+Pos_Alpha_Array = [Pos_Alpha_Array; update];
 
 end

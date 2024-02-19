@@ -73,8 +73,8 @@ end
 %% Choose the Deme Position
 
 Pos_Alpha_Array = [];
-N = 81;
-for deme_start = 80:N
+N = nl;
+for deme_start = 3:N
     if deme_start == N
         return
     end
@@ -130,11 +130,11 @@ for deme_start = 80:N
     %% Given the range of alphas, use ML Model to find the most optimum
 
     [Pos_Alpha_Array] = Calc_Alpha_ML_Function(...
-        Rtroc,F,vd_chemotaxis,alpha_start,deme_start,nl,Angle,Vo_max,xbias,DL);
+        Rtroc,F,vd_chemotaxis,alpha_start,deme_start,nl,Angle,Vo_max,xbias,DL, Pos_Alpha_Array);
 
 % In this case 'position' are the deme positions.
     T = array2table(Pos_Alpha_Array,...
-        'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'});
+        'VariableNames',{'Position','Alpha','Theory_Vel', 'Calc_Velocity', 'Vel_Percent_Error', 'loss', 'Prob_Tum_Up', 'Prob_Tum_Down'})
     format short G
 
 %     file_title = 'pos_%d_alpha_values_MaxC_%d_Grad_%.6f.xlsx';
@@ -142,10 +142,10 @@ for deme_start = 80:N
 %     writetable(T,filename,'Sheet',1,'Range','A1')
 end
 
-% T = array2table(Pos_Alpha_Array,...
-%     'VariableNames',{'position','alpha','Theory_Vel', 'Calc_Velocity', 'Prob_Tum_Up', 'Prob_Tum_Down'});
-% format short G
-% 
-% file_title = 'pos_%d_alpha_%d_to_%d_MaxC_%d_Grad_%.6f.xlsx';
-% filename = sprintf(file_title, deme_start,ini_al,fin_al,Max_Food_Conc,Grad);
-% writetable(T,filename,'Sheet',1,'Range','A1')
+T = array2table(Pos_Alpha_Array,...
+    'VariableNames',{'Position','Alpha','Theory_Vel', 'Calc_Velocity', 'Vel_Percent_Error', 'loss', 'Prob_Tum_Up', 'Prob_Tum_Down'})
+format short G
+
+file_title = 'pos_%d_alpha_%d_to_%d_MaxC_%d_Grad_%.6f.xlsx';
+filename = sprintf(file_title, deme_start,ini_al,fin_al,Max_Food_Conc,Grad);
+writetable(T,filename,'Sheet',1,'Range','A1')
