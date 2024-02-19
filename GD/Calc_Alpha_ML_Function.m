@@ -91,15 +91,14 @@ for n = 1:80 % start training loop
         Calculated_Ave_Vd_Array(iter) = Calculated_Ave_Vd;
         pos = DL*deme_start; % Position is reset on x-axis in µm
         iter = iter + 1;
-    end
+    end % while iter < max_iter
 
     M = mean(Calculated_Ave_Vd_Array); % Mean velocity for alpha
-    n
-    Vel_Diff = M - Average_Theory_Vel;
+    Ave_Vel_Diff = M - Average_Theory_Vel;
     stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array));
     
     if n > 60
-        loss = [(2*TV*Vel_Diff)^2]
+        loss = mean((Calculated_Ave_Vd_Array - Average_Theory_Vel).^2)
     end
     if (loss < loss_final) && (n > 60) && (abs(TV_2_SE) > abs(h))
         alpha_final = alpha
@@ -110,7 +109,7 @@ for n = 1:80 % start training loop
         rec_index = rec_index + 1;
     end
 
-    h = - 2*TV*Vel_Diff
+    h = - 2*TV*Ave_Vel_Diff
     TV_2_SE = 2*TV*stderror
     
     alpha = alpha + h
