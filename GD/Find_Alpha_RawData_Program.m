@@ -134,7 +134,7 @@ for deme_start = 3:N
 
 % In this case 'position' are the deme positions.
     T = array2table(Pos_Alpha_Array,...
-        'VariableNames',{'Position','Alpha','Theory_Vel', 'Calc_Velocity', 'Vel_Percent_Error', 'loss', 'Prob_Tum_Up', 'Prob_Tum_Down'})
+        'VariableNames',{'Position','Alpha','Theory_Vel', 'Calc_Velocity', 'Vel_Percent_Error', 'Loss', 'Prob_Tum_Up', 'Prob_Tum_Down'})
     format short G
 
 %     file_title = 'pos_%d_alpha_values_MaxC_%d_Grad_%.6f.xlsx';
@@ -143,7 +143,7 @@ for deme_start = 3:N
 end
 
 T = array2table(Pos_Alpha_Array,...
-    'VariableNames',{'Position','Alpha','Theory_Vel', 'Calc_Velocity', 'Vel_Percent_Error', 'loss', 'Prob_Tum_Up', 'Prob_Tum_Down'})
+    'VariableNames',{'Position','Alpha','Theory_Vel', 'Calc_Velocity', 'Vel_Percent_Error', 'Loss', 'Prob_Tum_Up', 'Prob_Tum_Down'})
 format short G
 
 file_title = 'pos_%d_alpha_%d_to_%d_MaxC_%d_Grad_%.6f.xlsx';
