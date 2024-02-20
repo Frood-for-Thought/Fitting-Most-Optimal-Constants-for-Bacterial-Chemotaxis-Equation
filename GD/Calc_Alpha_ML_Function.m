@@ -42,10 +42,10 @@ for n = 1:80 % start training loop
         TV = 1/(200*Rtroc(deme_start));
     elseif (n > 40) && (n < 60)
         max_iter = 4000;
-        TV = 1/(200*Rtroc(deme_start));
+        TV = 1/(300*Rtroc(deme_start));
     else
         max_iter = 10000;
-        TV = 1/(200*Rtroc(deme_start));
+        TV = 1/(400*Rtroc(deme_start));
     end
     iter = 1;
     while iter < max_iter
@@ -100,6 +100,7 @@ for n = 1:80 % start training loop
     Ave_Vel_Diff = M - Average_Theory_Vel;
     stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array));
     
+    n
     if n > 60
         loss = mean((Calculated_Ave_Vd_Array - Average_Theory_Vel).^2);
         if n < 61 % Get reference values when close to the theoretical.
