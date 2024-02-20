@@ -73,8 +73,8 @@ end
 %% Choose the Deme Position
 
 Pos_Alpha_Array = [];
-Ni = 31;
-Nj = 32;
+Ni = 41;
+Nj = 50;
 for deme_start = Ni:Nj
     %% Begin Calculation
     ini_al = 100;
