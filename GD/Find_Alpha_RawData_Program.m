@@ -73,7 +73,7 @@ end
 %% Choose the Deme Position
 
 Pos_Alpha_Array = [];
-N = nl;
+N = 20;
 for deme_start = 3:N
     if deme_start == N
         return
@@ -96,10 +96,9 @@ for deme_start = 3:N
     % theoretical velocity and use the location on the array to select 
     % Data_Row on Record_Data_Array to get an alpha value near where the
     % theoretical value should be.
-    Vel_Diff
-    [m,I] = min(Vel_Diff)
+    [m,I] = min(Vel_Diff);
     Data_Row = 1 + (I-1)*skip;
-    alpha_start = Record_Data_Array(Data_Row,1)
+    alpha_start = Record_Data_Array(Data_Row,1);
 
     %% Find the Next Best Alpha Value
     % Similar to the previous calculation but to further pinpoint a
@@ -121,11 +120,11 @@ for deme_start = 3:N
     % theoretical velocity and use the location on the array to select 
     % Data_Row on Record_Data_Array to get another starting alpha value
     % even closer to the theoretical value.
-    Vel_Diff
-    [m,I] = min(Vel_Diff)
-    Data_Row = I
+    
+    [m,I] = min(Vel_Diff);
+    Data_Row = I;
 %     Data_Row = 1 + (I-1)*next_skip
-    alpha_start = Record_Data_Array(Data_Row,1)
+    alpha_start = Record_Data_Array(Data_Row,1);
     
     %% Given the range of alphas, use ML Model to find the most optimum
 
@@ -136,10 +135,6 @@ for deme_start = 3:N
     T = array2table(Pos_Alpha_Array,...
         'VariableNames',{'Position','Alpha','Theory_Vel', 'Calc_Velocity', 'Vel_Percent_Error', 'Loss', 'Prob_Tum_Up', 'Prob_Tum_Down'})
     format short G
-
-%     file_title = 'pos_%d_alpha_values_MaxC_%d_Grad_%.6f.xlsx';
-%     filename = sprintf(file_title, deme_start,Max_Food_Conc,Grad);
-%     writetable(T,filename,'Sheet',1,'Range','A1')
 end
 
 T = array2table(Pos_Alpha_Array,...
