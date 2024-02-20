@@ -73,11 +73,9 @@ end
 %% Choose the Deme Position
 
 Pos_Alpha_Array = [];
-N = 30;
-for deme_start = 20:N
-    if deme_start == N
-        return
-    end
+Ni = 31;
+Nj = 32;
+for deme_start = Ni:Nj
     %% Begin Calculation
     ini_al = 100;
     fin_al = 9000;
@@ -135,12 +133,16 @@ for deme_start = 20:N
     T = array2table(Pos_Alpha_Array,...
         'VariableNames',{'Position','Alpha','Theory_Vel', 'Calc_Velocity', 'Vel_Percent_Error', 'Loss', 'Prob_Tum_Up', 'Prob_Tum_Down'})
     format short G
+    
+%     file_title = 'pos_%d_to_%d_MaxC_%d_Grad_%.6f.xlsx';
+%     filename = sprintf(file_title,Ni,Nj,Max_Food_Conc,Grad);
+%     writetable(T,filename,'Sheet',1,'Range','A1')
 end
 
 T = array2table(Pos_Alpha_Array,...
     'VariableNames',{'Position','Alpha','Theory_Vel', 'Calc_Velocity', 'Vel_Percent_Error', 'Loss', 'Prob_Tum_Up', 'Prob_Tum_Down'})
 format short G
 
-file_title = 'pos_%d_alpha_%d_to_%d_MaxC_%d_Grad_%.6f.xlsx';
-filename = sprintf(file_title, deme_start,ini_al,fin_al,Max_Food_Conc,Grad);
+file_title = 'pos_%d_to_%d_MaxC_%d_Grad_%.6f.xlsx';
+filename = sprintf(file_title,Ni,Nj,Max_Food_Conc,Grad);
 writetable(T,filename,'Sheet',1,'Range','A1')

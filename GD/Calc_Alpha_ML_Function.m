@@ -120,7 +120,7 @@ for n = 1:80 % start training loop
     
     alpha = alpha + h;
     if alpha < 0
-        alpha = 1;
+        alpha = 0;
     end
 end % for n = ... end training loop
 
