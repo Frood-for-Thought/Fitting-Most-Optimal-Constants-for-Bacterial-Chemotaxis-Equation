@@ -15,17 +15,13 @@ alpha_final = 0;
 pos = DL*deme_start; % Position on x-axis in µm
 pos_ini = DL*deme_start; % Initial position to calculate vd with
 % Calculate the position
-i = floor(pos/DL) + 1;
-theory_V = 0;
+i = floor(pos/DL);
 deme_end = deme_start + 1;
-if deme_end > nl
+if deme_end > nl + 1
     disp('Cannot use this value. Has to be smaller than nl.');
     return;
 end
-for i = deme_start:deme_end
-    theory_V = theory_V + vd_chemotaxis(i);
-end
-Average_Theory_Vel = theory_V/(deme_end - deme_start + 1);
+Theory_Vel = vd_chemotaxis(i);
 
 %% Start the ML Loop
 % This array is meant to record alpha values close to the theoretical.
@@ -83,7 +79,7 @@ for n = 1:80 % start training loop
                  break
              end
 
-            if i > deme_end
+            if i > deme_start
                 break
             end
         end
@@ -97,12 +93,12 @@ for n = 1:80 % start training loop
     if n < 2
         calc_velocity_final = M;
     end
-    Ave_Vel_Diff = M - Average_Theory_Vel;
+    Ave_Vel_Diff = M - Theory_Vel;
     stderror = std(Calculated_Ave_Vd_Array) / sqrt(length(Calculated_Ave_Vd_Array));
     
     n
     if n > 60
-        loss = mean((Calculated_Ave_Vd_Array - Average_Theory_Vel).^2);
+        loss = mean((Calculated_Ave_Vd_Array - Theory_Vel).^2);
         if n < 61 % Get reference values when close to the theoretical.
             alpha_final = alpha;
             loss_final = loss;
@@ -135,7 +131,7 @@ record_alpha_when_close_to_value(rec_index) = alpha_final;
 record_alpha_when_close_to_value
 ave_alpha_close_to_theory = mean(record_alpha_when_close_to_value)
 med_alpha_close_to_theory = median(record_alpha_when_close_to_value)
-percent_error_difference = abs(calc_velocity_final - Average_Theory_Vel)/Average_Theory_Vel;
+percent_error_difference = abs(calc_velocity_final - Theory_Vel)/Theory_Vel;
 
 %% Record All the Data
 prob_tum_up = dt*exp(-d - alpha*Rtroc(deme_start)); % prob tumbling up
@@ -143,7 +139,7 @@ prob_tum_down = dt*exp(-d + alpha*Rtroc(deme_start)); % prob tumbling down
 
 % Fix values to store them into RawData as rows.
 position = deme_start;
-theoryVel = Average_Theory_Vel;
+theoryVel = Theory_Vel;
 prob_up = prob_tum_up;
 prob_down = prob_tum_down;
 % Append data for iteration to place into RawData.
