@@ -1,7 +1,7 @@
 Grad = 0.000405; % µm^-1
 Max_Food_Conc = 60000; % µM
 
-filename = 'closest_alpha_const.csv';
+filename = 'closest_alpha_pos_1_to_101_MaxC_60000_Grad_0.000405.xlsx';
 A = xlsread(filename);
 format short g
 
