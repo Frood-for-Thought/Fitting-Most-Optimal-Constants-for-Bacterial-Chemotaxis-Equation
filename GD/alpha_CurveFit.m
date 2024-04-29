@@ -12,13 +12,18 @@ Y_data = A(:, 2);
 
 [xData, yData] = prepareCurveData( X_data, Y_data );
 
-% Set up fittype and options.
-ft = fittype( 'poly9' );
+xx = [1; 2; xData; 101];
+ft = spline(xData, yData, xx)
+length(ft)
+Results = [X_data, Y_data, ft];
 
-% Fit model to data.
-[fitresult, gof] = fit( xData, yData, ft );
+% % Set up fittype and options.
+% ft = fittype( 'poly9' );
+% 
+% % Fit model to data.
+% [fitresult, gof] = fit( xData, yData, ft );
 
-Results = [X_data, Y_data, fitresult(X_data)];
+% Results = [X_data, Y_data, fitresult(X_data)];
 T_res = array2table(Results,'VariableNames',...
     {'X_data','Y_data','Curve_Fit'})
 
@@ -28,8 +33,8 @@ writetable(T_res,filename,'Sheet',1,'Range','A1')
 
 
 
-fitresult
-gof
+% fitresult
+% gof
 
 % Plot fit with data.
 figure( 'Name', 'Polynomial_Fit' );

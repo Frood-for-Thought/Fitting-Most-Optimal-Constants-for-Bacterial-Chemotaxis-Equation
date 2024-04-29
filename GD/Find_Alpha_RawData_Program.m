@@ -1,8 +1,11 @@
 % FIND A WAY TO FIT THE ALPHA CONSTANT
-% Find_Alpha_Program uses the results in "Calc_Vd_Per_Alpha_Deme_Function"
+% Find_Alpha_Program uses the results in "Calc_V_Per_Alpha_Deme_Function"
 % to match which speed is closest to the theoretical value. 
 % The closest value is matched to later be used to 
 % in curve fitting to find the variable alpha value.
+% Then the program uses "Calc_Alpha_ML_Function" to calculate an
+% alpha value which gives a drift velocity closes to the theoretical.
+% The Machine Learning algroithm is in "Calc_Alpha_ML_Function".
 
 close all
 %% INSEERT FOOD CONCENTRATION

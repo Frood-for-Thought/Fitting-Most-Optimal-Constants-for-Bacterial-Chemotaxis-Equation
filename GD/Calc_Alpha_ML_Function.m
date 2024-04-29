@@ -28,7 +28,7 @@ Theory_Vel = vd_chemotaxis(i);
 rec_index = 1; % index for "record_alpha_when_close_to_value"
 record_alpha_when_close_to_value = zeros();
 
-for n = 1:80 % start training loop
+for n = 1:80 % start training loop n times.
     Calculated_Ave_Vd_Array = zeros();
     if n <= 20
         max_iter = 1000;
