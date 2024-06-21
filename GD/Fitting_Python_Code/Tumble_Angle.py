@@ -12,7 +12,7 @@ class Tumble_Angle_Distribution(rv_continuous):
         return 0.5 * (1 + np.cos(x)) * np.sin(x)
 
 
-class New_Angle(Tumble_Angle_Distribution):
+class Angle_Generator(Tumble_Angle_Distribution):
     def __init__(self):
         # Initialize the base class with angles from 0 to pi radians.
         super().__init__(a=0, b=np.pi, name='custom_angle_distribution')
