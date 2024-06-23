@@ -23,5 +23,4 @@ class Angle_Generator(Tumble_Angle_Distribution):
         :return: The repositioned tumble angle in degrees.
         """
         random_angle_rad = self.rvs()
-        random_angle_deg = np.degrees(random_angle_rad)
-        return random_angle_deg
+        return np.degrees(random_angle_rad)
