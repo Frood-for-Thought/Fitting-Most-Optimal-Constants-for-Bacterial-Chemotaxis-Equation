@@ -26,9 +26,9 @@ next_tumble_angle = angle_generator.tumble_angle_function()
 # The theoretical parameters have been pre-calculated to fit onto.
 # These parameters are for:
 #     nl = 101
-#     Grad = 0.000405  # µm^-1
-#     Max_Food_Conc = 60000  # µM
-#     DL = 310  # µm
+#     Grad = 0.000405  µm^-1
+#     Max_Food_Conc = 60000  µM
+#     DL = 310  µm
 input_parameters = '../input_parameters.xlsx'
 parameter_df = pd.read_excel(input_parameters)
 vd_chemotaxis = parameter_df.loc[:, 'drift_velocity']  # The theoretical drift velocity per deme.
@@ -36,3 +36,33 @@ c_df_over_dc = parameter_df.loc[:, 'c_x_df_l_dc']  # Concentration*df/dc.
 vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
 # Timed rate of change of the amount of receptor protein bound.
 Rtroc = vd_chemotaxis*Grad*c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
+
+# Read the parameters from the Excel file to use in the Time Rate of Change of the Receptor Bound equation.
+file_title = '../input_parameters.xlsx'  # Adjusting path to read from one directory above
+input_parameter_df = pd.read_excel(file_title)
+
+vd_chemotaxis = input_parameter_df.iloc[:, 1].values
+c_df_over_dc = input_parameter_df.iloc[:, 2].values
+Vo_max = input_parameter_df.iloc[0, 4]
+
+# Plotting
+fig, ax1 = plt.subplots()
+
+color = 'tab:blue'
+ax1.set_xlabel('Position')
+ax1.set_ylabel('Drift Velocity, Vd [µm/s]', color=color)
+ax1.plot(vd_chemotaxis, color=color, linewidth=2)
+ax1.tick_params(axis='y', labelcolor=color)
+ax1.set_xlim([0, nl])
+ax1.set_ylim([0, 5])
+
+ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+color = 'tab:red'
+ax2.set_ylabel('Concentration [µM]', color=color)  # we already handled the x-label with ax1
+ax2.plot(xbias, color=color)
+ax2.tick_params(axis='y', labelcolor=color)
+ax2.set_ylim([0, np.max(xbias)])
+
+fig.tight_layout()  # otherwise the right y-label is slightly clipped
+plt.title('Drift Velocity and Concentration')
+plt.show()
