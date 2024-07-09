@@ -37,14 +37,6 @@ vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
 # Timed rate of change of the amount of receptor protein bound.
 Rtroc = vd_chemotaxis*Grad*c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
 
-# Read the parameters from the Excel file to use in the Time Rate of Change of the Receptor Bound equation.
-file_title = '../input_parameters.xlsx'  # Adjusting path to read from one directory above
-input_parameter_df = pd.read_excel(file_title)
-
-vd_chemotaxis = input_parameter_df.iloc[:, 1].values
-c_df_over_dc = input_parameter_df.iloc[:, 2].values
-Vo_max = input_parameter_df.iloc[0, 4]
-
 # Plotting
 fig, ax1 = plt.subplots()
 
@@ -66,3 +58,5 @@ ax2.set_ylim([0, np.max(xbias)])
 fig.tight_layout()  # otherwise the right y-label is slightly clipped
 plt.title('Drift Velocity and Concentration')
 plt.show()
+
+
