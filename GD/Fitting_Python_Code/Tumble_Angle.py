@@ -5,7 +5,7 @@ from scipy.stats import rv_continuous
 class Tumble_Angle_Distribution(rv_continuous):
     def _pdf(self, x):
         """
-        Override the _pdf describe bacterial tumble angle.
+        Override the _pdf describe bacterial tumble angle from "rv_continuous" in "scipy.stats".
         :param x: Angle in Rad.
         :return: P(x) = 0.5*(1+cos(x))*sin(x)
         """

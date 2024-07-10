@@ -7,7 +7,7 @@ from Tumble_Angle import Angle_Generator
 angle_generator = Angle_Generator()
 
 
-# Initialization and Food Concentration Calculation
+# Initialization and Food Concentration Calculation.
 nl = 101
 Grad = 0.000405  # µm^-1
 Max_Food_Conc = 60000  # µM
@@ -19,8 +19,10 @@ Ini_Food_Const = Max_Food_Conc / Food_Function[-1]
 xbias = Ini_Food_Const * Food_Function
 
 
-# Generate a new tumble angle
+# Generate a new tumble angle.
 next_tumble_angle = angle_generator.tumble_angle_function()
+Start_Angle = 90  # degrees
+Angle = Start_Angle
 
 
 # The theoretical parameters have been pre-calculated to fit onto.
@@ -33,7 +35,7 @@ input_parameters = '../input_parameters.xlsx'
 parameter_df = pd.read_excel(input_parameters)
 vd_chemotaxis = parameter_df.loc[:, 'drift_velocity']  # The theoretical drift velocity per deme.
 c_df_over_dc = parameter_df.loc[:, 'c_x_df_l_dc']  # Concentration*df/dc.
-vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
+Vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
 # Timed rate of change of the amount of receptor protein bound.
 Rtroc = vd_chemotaxis*Grad*c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
 
@@ -59,4 +61,12 @@ fig.tight_layout()  # otherwise the right y-label is slightly clipped
 plt.title('Drift Velocity and Concentration')
 plt.show()
 
+Pos_Alpha_Array = []
+Ni = 2
+Nj = 100
+for deme_start in range(Ni, Nj + 1):
+    alpha_start = 500
 
+    # Call the ML function to find the most optimum alpha value.
+    Pos_Alpha_Array = Calc_Alpha_ML_Function(
+        Rtroc, F, vd_chemotaxis, alpha_start, deme_start, nl, Angle, Vo_max, xbias, DL, Pos_Alpha_Array)
