@@ -12,20 +12,20 @@ from Tumble_Angle import Angle_Generator
 
 
 class NormMeanMatchDataGenerator:
-    def __init__(self, Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, max_iter):
-        self.Rtroc = Rtroc
-        self.alpha = alpha
-        self.Angle = Angle
-        self.Vo_max = Vo_max
-        self.DL = DL
-        self.nl = nl
-        self.deme_start = deme_start
-        self.d = 1.16  # Diffusion constant
-        self.dt = 0.1  # Time step
-        self.pos = DL * deme_start
-        self.pos_ini = DL * deme_start
-        self.angle_generator = Angle_Generator.tumble_angle_function()
-        self.max_iter = max_iter
+    def __init__(self, Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter):
+        self.Rtroc = Rtroc  # Time rate of change of the fractional amount of receptor (protein) bound.
+        self.alpha = alpha  # The alpha constant to be found.
+        self.Angle = Angle  # Bacterial orientation angle.
+        self.Vo_max = Vo_max  # Run Speed
+        self.DL = DL  # Deme length [µM]
+        self.nl = nl  # Total number of demes.
+        self.deme_start = deme_start  # Deme starting position.
+        self.d = diff  # Diffusion constant
+        self.dt = dt  # Time step
+        self.pos = DL * deme_start  # Position variable [µM]
+        self.pos_ini = DL * deme_start  # Starting position [µM]
+        self.angle_generator = Angle_Generator.tumble_angle_function()  # Generating new orientation angle from PDF.
+        self.max_iter = max_iter  # Number of data points generated.
 
     def simulate_bacterial_movement(self):
         pos = self.pos
