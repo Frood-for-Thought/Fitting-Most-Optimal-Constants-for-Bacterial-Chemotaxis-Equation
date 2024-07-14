@@ -59,6 +59,7 @@ class NormMeanMatchDataGenerator:
     def simulate_bacterial_movement_cuda(self):
         pos = torch.tensor(self.pos, device='cuda')
         Angle = torch.tensor(self.Angle, device='cuda')
+        Rtroc_cuda = torch.tensor(self.Rtroc.values, device='cuda')
         Calculated_Ave_Vd_Array = []
         iter = 1
 
@@ -66,9 +67,9 @@ class NormMeanMatchDataGenerator:
             for t in torch.arange(1, 1000, self.dt, device='cuda'):
                 i = (pos // self.DL).long()
                 if (90 <= Angle) and (Angle < 270):
-                    Ptum = self.dt * torch.exp(-self.d + self.alpha * self.Rtroc[i])
+                    Ptum = self.dt * torch.exp(-self.d + self.alpha * Rtroc_cuda[i.item()])
                 else:
-                    Ptum = self.dt * torch.exp(-self.d - self.alpha * self.Rtroc[i])
+                    Ptum = self.dt * torch.exp(-self.d - self.alpha * Rtroc_cuda[i.item()])
 
                 R_rt = torch.rand(1, device='cuda')
                 if R_rt < Ptum:
