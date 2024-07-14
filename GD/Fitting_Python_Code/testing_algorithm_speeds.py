@@ -2,9 +2,12 @@ import numpy as np
 import pandas as pd
 import torch
 import time
+import logging
 # Import the Tumble Angle Module
 from Tumble_Angle import Angle_Generator
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class NormMeanMatchDataGenerator:
     def __init__(self, Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter):
@@ -21,6 +24,9 @@ class NormMeanMatchDataGenerator:
         self.pos_ini = DL * deme_start  # Starting position [µM]
         self.angle_generator = angle_generator  # Generating new orientation angle from PDF.
         self.max_iter = max_iter  # Number of data points generated.
+
+        logging.info(f"Initialized NormMeanMatchDataGenerator with: alpha={alpha}, Angle={Angle}, Vo_max={Vo_max}, "
+                     f"DL={DL}, nl={nl}, deme_start={deme_start}, diff={diff}, dt={dt}, max_iter={max_iter}")
 
     def simulate_bacterial_movement_cpu(self):
         pos = self.pos
@@ -57,9 +63,9 @@ class NormMeanMatchDataGenerator:
         return np.array(Calculated_Ave_Vd_Array)
 
     def simulate_bacterial_movement_cuda(self):
-        pos = torch.tensor(self.pos, device='cuda')
-        Angle = torch.tensor(self.Angle, device='cuda')
-        Rtroc_cuda = torch.tensor(self.Rtroc.values, device='cuda')
+        pos = torch.tensor(self.pos, device='cuda', dtype=torch.float)
+        Angle = torch.tensor(self.Angle, device='cuda', dtype=torch.float)
+        Rtroc_cuda = torch.tensor(self.Rtroc.values, device='cuda', dtype=torch.float)
         Calculated_Ave_Vd_Array = []
         iter = 1
 
@@ -76,7 +82,7 @@ class NormMeanMatchDataGenerator:
                     Next_Angle = self.angle_generator.tumble_angle_function()
                     Angle = (Angle + Next_Angle) % 360
                 else:
-                    Dot_Product = torch.cos(torch.radians(Angle))
+                    Dot_Product = torch.cos(torch.deg2rad(Angle))
                     pos += self.dt * self.Vo_max * Dot_Product
 
                 pos = torch.clamp(pos, 0, self.nl * self.DL)
@@ -86,28 +92,30 @@ class NormMeanMatchDataGenerator:
 
             Calculated_Ave_Vd = (pos - self.pos_ini) / t
             Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.item())
-            pos = torch.tensor(self.DL * self.deme_start, device='cuda')
+            pos = torch.tensor(self.DL * self.deme_start, device='cuda', dtype=torch.float)
             iter += 1
 
         return torch.tensor(Calculated_Ave_Vd_Array, device='cuda')
 
     def time_execution(self):
-        # Measure CPU execution time
-        start_time = time.time()
-        cpu_data = self.simulate_bacterial_movement_cpu()
-        cpu_time = time.time() - start_time
+        # # Measure CPU execution time
+        # logging.info("Starting CPU execution")
+        # start_time = time.time()
+        # cpu_data = self.simulate_bacterial_movement_cpu()
+        # cpu_time = time.time() - start_time
+        # logging.info(f"CPU execution time: {cpu_time:.4f} seconds")
 
         # Measure CUDA execution time
+        logging.info("Starting CUDA execution")
         start_time = time.time()
         cuda_data = self.simulate_bacterial_movement_cuda()
         cuda_time = time.time() - start_time
-
-        print(f"CPU execution time: {cpu_time:.4f} seconds")
-        print(f"CUDA execution time: {cuda_time:.4f} seconds")
+        logging.info(f"CUDA execution time: {cuda_time:.4f} seconds")
 
         # Verify that both implementations produce similar results
-        print("CPU data:", cpu_data)
-        print("CUDA data:", cuda_data.cpu().numpy())  # Convert CUDA tensor to numpy array for comparison
+        logging.info("Verifying results")
+        logging.info(f"CPU data: {cpu_data}")
+        logging.info(f"CUDA data: {cuda_data.cpu().numpy()}")  # Convert CUDA tensor to numpy array for comparison
 
 # Parameters for the simulation
 # Initialization and Food Concentration Calculation.
