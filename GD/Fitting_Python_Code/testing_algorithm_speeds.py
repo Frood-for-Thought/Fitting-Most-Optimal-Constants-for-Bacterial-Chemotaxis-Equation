@@ -9,6 +9,7 @@ from Tumble_Angle import Angle_Generator
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 class NormMeanMatchDataGenerator:
     def __init__(self, Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter):
         self.Rtroc = Rtroc  # Time rate of change of the fractional amount of receptor (protein) bound.
@@ -152,11 +153,25 @@ Rtroc = vd_chemotaxis * Grad * c_df_over_dc  # This numpy vector is calculated f
 alpha = 500
 diff = 1.16
 dt = 0.1
-max_iter = 1000
+max_iter = 3
 deme_start = 30
 
 # Initialize the data generator
 data_generator = NormMeanMatchDataGenerator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter)
 
-# Time the execution of both algorithms
-data_generator.time_execution()
+# torch.autograd provides classes and functions implementing automatic differentiation of arbitrary
+# scalar valued functions. It requires minimal changes to the existing code
+# - you only need to declare Tensor s for which gradients should be computed with the requires_grad=True keyword.
+# Autograd includes a profiler that lets you inspect the cost of different operators inside your model
+# - both on the CPU and GPU.
+# The record_shapes=True option is used to record the shapes of the tensors involved in the operations being profiled.
+# This can be helpful in understanding how tensor dimensions change throughout your operations and
+# identify potential inefficiencies related to tensor shape manipulations.
+with torch.autograd.profiler.profile(record_shapes=True) as prof:
+    with torch.autograd.profiler.record_function("simulate_bacterial_movement_cuda"):
+        cuda_data = data_generator.simulate_bacterial_movement_cuda()
+
+print(prof.key_averages().table(sort_by="cuda_time_total"))
+
+# # Time the execution of both algorithms
+# data_generator.time_execution()
