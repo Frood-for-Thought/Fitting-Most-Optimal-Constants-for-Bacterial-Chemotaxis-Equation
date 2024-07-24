@@ -31,7 +31,7 @@ class Angle_Generator(Tumble_Angle_Distribution):
 
 
 class TumbleAngleDistribution_cuda:
-    def __init__(self, a=0, b=1, rnd_num_range=1):
+    def __init__(self, a, b, rnd_num_range=1):
         self.a = a
         self.b = b
         self.rnd_num_range = rnd_num_range  # From 0 to rnd_num_range
@@ -58,11 +58,10 @@ class AngleGenerator_cuda(TumbleAngleDistribution_cuda):
         super().__init__(a=0, b=np.pi, rnd_num_range=1)
 
     def tumble_angle_function_cuda(self):
-        random_angles_rad = self.pdf()
-        return torch.rad2deg(random_angles_rad)
+        random_angles_rad = self.sample()
+        return torch.rad2deg(random_angles_rad).to("cuda")
 
 
 # Example usage
-angle_generator = AngleGenerator_cuda()
-angles = angle_generator.tumble_angle_function_cuda()
-print(angles)
+angle = AngleGenerator_cuda().tumble_angle_function_cuda()
+print(angle)
