@@ -63,38 +63,72 @@ class NormMeanMatchDataGenerator:
 
         return np.array(Calculated_Ave_Vd_Array)
 
+    # def simulate_bacterial_movement_cuda(self):
+    #     num_blocks = 408  # Total blocks for optimal SM utilization
+    #     threads_per_block = 256  # Optimal threads per block
+    #     pos = torch.tensor(self.pos, device='cuda', dtype=torch.float)
+    #     Angle = torch.tensor(self.Angle, device='cuda', dtype=torch.float)
+    #     Rtroc_cuda = torch.tensor(self.Rtroc.values, device='cuda', dtype=torch.float)
+    #     Calculated_Ave_Vd_Array = []
+    #     iter = 1
+    #
+    #     while iter < self.max_iter:
+    #         for t in torch.arange(1, 1000, self.dt, device='cuda'):
+    #             i = (pos // self.DL).long()
+    #             if (90 <= Angle) and (Angle < 270):
+    #                 Ptum = self.dt * torch.exp(-self.d + self.alpha * Rtroc_cuda[i.item()])
+    #             else:
+    #                 Ptum = self.dt * torch.exp(-self.d - self.alpha * Rtroc_cuda[i.item()])
+    #
+    #             R_rt = torch.rand(1, device='cuda')
+    #             if R_rt < Ptum:
+    #                 Next_Angle = self.angle_generator.tumble_angle_function()
+    #                 Angle = (Angle + Next_Angle) % 360
+    #             else:
+    #                 Dot_Product = torch.cos(torch.deg2rad(Angle))
+    #                 pos += self.dt * self.Vo_max * Dot_Product
+    #
+    #             pos = torch.clamp(pos, 0, self.nl * self.DL)
+    #
+    #             if pos == 0 or pos >= self.nl * self.DL:
+    #                 break
+    #
+    #         Calculated_Ave_Vd = (pos - self.pos_ini) / t
+    #         Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.item())
+    #         pos = torch.tensor(self.DL * self.deme_start, device='cuda', dtype=torch.float)
+    #         iter += 1
+    #
+    #     return torch.tensor(Calculated_Ave_Vd_Array, device='cuda')
+
     def simulate_bacterial_movement_cuda(self):
-        pos = torch.tensor(self.pos, device='cuda', dtype=torch.float)
-        Angle = torch.tensor(self.Angle, device='cuda', dtype=torch.float)
-        Rtroc_cuda = torch.tensor(self.Rtroc.values, device='cuda', dtype=torch.float)
+        num_blocks = 408  # Total blocks for optimal SM utilization
+        threads_per_block = 256  # Optimal threads per block
+        pos = torch.full((self.max_iter,), self.pos, device='cuda', dtype=torch.float)
+        Angle = torch.full((self.max_iter,), self.Angle, device='cuda', dtype=torch.float)
+
         Calculated_Ave_Vd_Array = []
-        iter = 1
+        for t in torch.arange(1, 1000, self.dt, device='cuda'):
+            i = (pos // self.DL).long()
+            tum_condition = (90 <= Angle) & (Angle < 270)
+            Ptum = torch.where(tum_condition,
+                               self.dt * torch.exp(-self.d + self.alpha * self.Rtroc[i]),
+                               self.dt * torch.exp(-self.d - self.alpha * self.Rtroc[i]))
 
-        while iter < self.max_iter:
-            for t in torch.arange(1, 1000, self.dt, device='cuda'):
-                i = (pos // self.DL).long()
-                if (90 <= Angle) and (Angle < 270):
-                    Ptum = self.dt * torch.exp(-self.d + self.alpha * Rtroc_cuda[i.item()])
-                else:
-                    Ptum = self.dt * torch.exp(-self.d - self.alpha * Rtroc_cuda[i.item()])
+            R_rt = torch.rand(self.max_iter, device='cuda')
+            tumble_mask = R_rt < Ptum
+            run_mask = ~tumble_mask
 
-                R_rt = torch.rand(1, device='cuda')
-                if R_rt < Ptum:
-                    Next_Angle = self.angle_generator.tumble_angle_function()
-                    Angle = (Angle + Next_Angle) % 360
-                else:
-                    Dot_Product = torch.cos(torch.deg2rad(Angle))
-                    pos += self.dt * self.Vo_max * Dot_Product
+            next_angles = self.angle_generator.tumble_angle_function_cuda(tumble_mask.sum().item())
+            Angle[tumble_mask] = (Angle[tumble_mask] + next_angles) % 360
+            Dot_Product = torch.cos(torch.deg2rad(Angle[run_mask]))
+            pos[run_mask] += self.dt * self.Vo_max * Dot_Product
 
-                pos = torch.clamp(pos, 0, self.nl * self.DL)
+            pos = torch.clamp(pos, 0, self.nl * self.DL)
+            if (pos == 0).any() or (pos >= self.nl * self.DL).any():
+                break
 
-                if pos == 0 or pos >= self.nl * self.DL:
-                    break
-
-            Calculated_Ave_Vd = (pos - self.pos_ini) / t
-            Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.item())
-            pos = torch.tensor(self.DL * self.deme_start, device='cuda', dtype=torch.float)
-            iter += 1
+        Calculated_Ave_Vd = (pos - self.pos_ini) / t
+        Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.mean().item())
 
         return torch.tensor(Calculated_Ave_Vd_Array, device='cuda')
 
