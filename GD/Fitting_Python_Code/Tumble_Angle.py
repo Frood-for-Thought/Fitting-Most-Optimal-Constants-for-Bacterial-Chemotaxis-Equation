@@ -31,51 +31,136 @@ class Angle_Generator(Tumble_Angle_Distribution):
 # Recalculating for CUDA
 
 
+# class CustomTumbleAngleDistribution:
+#     def __init__(self, a=0, b=np.pi):
+#         self.a = a
+#         self.b = b
+#         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+#         self.max_pdf = self.compute_max_pdf()
+#
+#     def pdf(self, x):
+#         """
+#         Probability Density Function for the tumble angle.
+#         :param x: Angle in Rad.
+#         :return: P(x) = 0.5*(1+cos(x))*sin(x)
+#         """
+#         return 0.5 * (1 + torch.cos(x)) * torch.sin(x)
+#
+#     def compute_max_pdf(self):
+#         """
+#         Compute the maximum value of the PDF for use in rejection sampling.
+#         """
+#         x_vals = torch.linspace(self.a, self.b, 100000, device=self.device)
+#         pdf_vals = self.pdf(x_vals)
+#         return torch.max(pdf_vals).item()
+#
+#     def rvs(self, size=1, batch_size_factor=100):
+#         """
+#         Random variate generation for the custom distribution using rejection sampling.
+#         :param size: Number of samples to generate.
+#         :param batch_size_factor: Factor to determine the batch size for sampling.
+#         :return: Tensor of samples in radians.
+#         """
+#         samples = torch.empty(size, device=self.device)
+#         count = 0
+#         batch_size = size * batch_size_factor  # Generate a larger batch to improve efficiency
+#
+#         while count < size:
+#             # Generate uniform random numbers between a and b
+#             x = torch.rand(batch_size, device=self.device) * (self.b - self.a) + self.a
+#             # Generate uniform random numbers between 0 and the maximum of the PDF
+#             y = torch.rand(batch_size, device=self.device) * self.max_pdf
+#             # Accept the samples that are under the PDF curve
+#             accept = y < self.pdf(x)
+#             num_accept = torch.sum(accept).item()
+#
+#             if num_accept > 0:
+#                 # Calculate the number of samples to add
+#                 num_to_add = min(num_accept, size - count)
+#                 samples[count:count + num_to_add] = x[accept][:num_to_add]
+#                 count += num_to_add
+#
+#         return samples
+#
+#
+# class AngleGenerator_cuda:
+#     def __init__(self):
+#         self.distribution = CustomTumbleAngleDistribution(a=0, b=np.pi)
+#
+#     def tumble_angle_function_cuda(self, size=1):
+#         random_angle_rad = self.distribution.rvs(size)
+#         return torch.rad2deg(random_angle_rad).to(self.distribution.device)
+#
+#
+# # Function to test multiple angle generations
+# def test_multiple_generations(num_generations):
+#     angle_generator = AngleGenerator_cuda()
+#     start_time = time.time()
+#
+#     angles = angle_generator.tumble_angle_function_cuda(num_generations)
+#
+#     end_time = time.time()
+#     print(
+#         f"Generated {num_generations} angles in {end_time - start_time:.4f} seconds with mean {torch.mean(angles).item():.2f}")
+#
+#
+# # Example usage
+# num_generations = 100000  # Number of times to generate angles
+# test_multiple_generations(num_generations)
+
 class CustomTumbleAngleDistribution:
-    def __init__(self, a=0, b=np.pi):
+    def __init__(self, a=0, b=np.pi, num_points=1000000):
         self.a = a
         self.b = b
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.max_pdf = self.compute_max_pdf()
+        self.num_points = num_points
+        self.x_vals = torch.linspace(self.a, self.b, self.num_points, device=self.device)
+        self.pdf_vals = self.pdf(self.x_vals)
+        self.cdf_vals = self.compute_cdf()
 
     def pdf(self, x):
         """
         Probability Density Function for the tumble angle.
         :param x: Angle in Rad.
-        :return: P(x) = 0.5*(1+cos(x))*sin(x)
+        :return: P(x) = 0.5 * (1 + cos(x)) * sin(x)
         """
         return 0.5 * (1 + torch.cos(x)) * torch.sin(x)
 
-    def compute_max_pdf(self):
+    def compute_cdf(self):
         """
-        Compute the maximum value of the PDF for use in rejection sampling.
+        Compute the Cumulative Distribution Function (CDF).
         """
-        x_vals = torch.linspace(self.a, self.b, 100000, device=self.device)
-        pdf_vals = self.pdf(x_vals)
-        return torch.max(pdf_vals).item()
+        cdf_vals = torch.cumsum(self.pdf_vals, dim=0)
+        cdf_vals /= cdf_vals[-1].clone()  # Normalize the CDF
+        return cdf_vals
+
+    def interpolate_inverse_cdf(self, u):
+        """
+        Interpolate the inverse CDF.
+        :param u: Uniform random samples in [0, 1].
+        :return: Interpolated samples corresponding to the CDF values.
+        """
+        indices = torch.searchsorted(self.cdf_vals, u)
+        indices = torch.clamp(indices, 1, len(self.x_vals) - 1)
+
+        x1 = self.x_vals[indices - 1]
+        x2 = self.x_vals[indices]
+        y1 = self.cdf_vals[indices - 1]
+        y2 = self.cdf_vals[indices]
+
+        slope = (y2 - y1) / (x2 - x1)
+        intercept = y1 - slope * x1
+
+        return (u - intercept) / slope
 
     def rvs(self, size=1):
         """
-        Random variate generation for the custom distribution using rejection sampling.
+        Random variate generation for the custom distribution using inverse transform sampling.
         :param size: Number of samples to generate.
         :return: Tensor of samples in radians.
         """
-        samples = torch.empty(size, device=self.device)
-        count = 0
-
-        while count < size:
-            # Generate uniform random numbers between a and b
-            x = torch.rand(size - count, device=self.device) * (self.b - self.a) + self.a
-            # Generate uniform random numbers between 0 and the maximum of the PDF
-            y = torch.rand(size - count, device=self.device) * self.max_pdf
-            # Accept the samples that are under the PDF curve
-            accept = y < self.pdf(x)
-            num_accept = torch.sum(accept).item()
-
-            if num_accept > 0:
-                samples[count:count + num_accept] = x[accept]
-                count += num_accept
-
+        uniform_samples = torch.rand(size, device=self.device)
+        samples = self.interpolate_inverse_cdf(uniform_samples)
         return samples
 
 
