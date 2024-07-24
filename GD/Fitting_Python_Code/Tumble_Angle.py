@@ -179,18 +179,19 @@ class AngleGenerator_cuda(CustomTumbleAngleDistribution):
         return torch.rad2deg(random_angle_rad).to(self.device)
 
 
-# Function to test multiple angle generations
-def test_multiple_generations(num_generations):
-    angle_generator = AngleGenerator_cuda()
-    start_time = time.time()
+if __name__ == "__main__":
+    # Function to test multiple angle generations
+    def test_multiple_generations(num_generations):
+        angle_generator = AngleGenerator_cuda()
+        start_time = time.time()
 
-    angles = angle_generator.tumble_angle_function_cuda(num_generations)
+        angles = angle_generator.tumble_angle_function_cuda(size=num_generations)
 
-    end_time = time.time()
-    print(
-        f"Generated {num_generations} angles in {end_time - start_time:.4f} seconds with mean {torch.mean(angles).item():.2f}")
+        end_time = time.time()
+        print(
+            f"Generated {num_generations} angles in {end_time - start_time:.4f} seconds with mean {torch.mean(angles).item():.2f}")
 
 
-# Example usage
-num_generations = 100000  # Number of times to generate angles
-test_multiple_generations(num_generations)
+    # Example usage
+    num_generations = 100000  # Number of times to generate angles
+    test_multiple_generations(num_generations)
