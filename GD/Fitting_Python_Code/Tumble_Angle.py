@@ -129,6 +129,7 @@ class CustomTumbleAngleDistribution:
     def compute_cdf(self):
         """
         Compute the Cumulative Distribution Function (CDF).
+        :return: The normalized cdf with bins = num_points.
         """
         cdf_vals = torch.cumsum(self.pdf_vals, dim=0)
         cdf_vals /= cdf_vals[-1].clone()  # Normalize the CDF
@@ -136,21 +137,26 @@ class CustomTumbleAngleDistribution:
 
     def interpolate_inverse_cdf(self, u):
         """
-        Interpolate the inverse CDF.
+        A linear interpolation for the inverse CDF.
         :param u: Uniform random samples in [0, 1].
         :return: Interpolated samples corresponding to the CDF values.
         """
+        # Find the indices in self.cdf_vals where the values of u would be inserted to maintain order.
         indices = torch.searchsorted(self.cdf_vals, u)
+        # Clamp the indices to ensure they are within the valid range (1 to len(self.x_vals) - 1)
         indices = torch.clamp(indices, 1, len(self.x_vals) - 1)
 
+        # Get the x values corresponding to the indices and their preceding values.
         x1 = self.x_vals[indices - 1]
         x2 = self.x_vals[indices]
+        # Get the corresponding CDF values for the indices and their preceding values.
         y1 = self.cdf_vals[indices - 1]
         y2 = self.cdf_vals[indices]
-
+        # Calculate the slope for linear interpolation.
         slope = (y2 - y1) / (x2 - x1)
+        # Calculate the intercept for linear interpolation.
         intercept = y1 - slope * x1
-
+        # Perform the linear interpolation to find the corresponding x values for the given u.
         return (u - intercept) / slope
 
     def rvs(self, size=1):
@@ -164,13 +170,13 @@ class CustomTumbleAngleDistribution:
         return samples
 
 
-class AngleGenerator_cuda:
+class AngleGenerator_cuda(CustomTumbleAngleDistribution):
     def __init__(self):
-        self.distribution = CustomTumbleAngleDistribution(a=0, b=np.pi)
+        super().__init__(a=0, b=np.pi)
 
     def tumble_angle_function_cuda(self, size=1):
-        random_angle_rad = self.distribution.rvs(size)
-        return torch.rad2deg(random_angle_rad).to(self.distribution.device)
+        random_angle_rad = self.rvs(size)
+        return torch.rad2deg(random_angle_rad).to(self.device)
 
 
 # Function to test multiple angle generations
