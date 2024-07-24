@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import rv_continuous
 import torch
+import time
 
 
 class Tumble_Angle_Distribution(rv_continuous):
@@ -30,11 +31,12 @@ class Angle_Generator(Tumble_Angle_Distribution):
 # Recalculating for CUDA
 
 
-class TumbleAngleDistribution_cuda:
-    def __init__(self, a, b, rnd_num_range=1):
+class CustomTumbleAngleDistribution:
+    def __init__(self, a=0, b=np.pi):
         self.a = a
         self.b = b
-        self.rnd_num_range = rnd_num_range  # From 0 to rnd_num_range
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.max_pdf = self.compute_max_pdf()
 
     def pdf(self, x):
         """
@@ -44,24 +46,60 @@ class TumbleAngleDistribution_cuda:
         """
         return 0.5 * (1 + torch.cos(x)) * torch.sin(x)
 
-    def sample(self):
+    def compute_max_pdf(self):
         """
-        Sample from the custom probability distribution using direct sampling.
+        Compute the maximum value of the PDF for use in rejection sampling.
+        """
+        x_vals = torch.linspace(self.a, self.b, 100000, device=self.device)
+        pdf_vals = self.pdf(x_vals)
+        return torch.max(pdf_vals).item()
+
+    def rvs(self, size=1):
+        """
+        Random variate generation for the custom distribution using rejection sampling.
+        :param size: Number of samples to generate.
         :return: Tensor of samples in radians.
         """
-        u = torch.rand(self.rnd_num_range, device='cuda') * (self.b - self.a) + self.a
-        return self.pdf(u)  # Evaluate the PDF at the sampled angles
+        samples = torch.empty(size, device=self.device)
+        count = 0
+
+        while count < size:
+            # Generate uniform random numbers between a and b
+            x = torch.rand(size - count, device=self.device) * (self.b - self.a) + self.a
+            # Generate uniform random numbers between 0 and the maximum of the PDF
+            y = torch.rand(size - count, device=self.device) * self.max_pdf
+            # Accept the samples that are under the PDF curve
+            accept = y < self.pdf(x)
+            num_accept = torch.sum(accept).item()
+
+            if num_accept > 0:
+                samples[count:count + num_accept] = x[accept]
+                count += num_accept
+
+        return samples
 
 
-class AngleGenerator_cuda(TumbleAngleDistribution_cuda):
+class AngleGenerator_cuda:
     def __init__(self):
-        super().__init__(a=0, b=np.pi, rnd_num_range=1)
+        self.distribution = CustomTumbleAngleDistribution(a=0, b=np.pi)
 
-    def tumble_angle_function_cuda(self):
-        random_angles_rad = self.sample()
-        return torch.rad2deg(random_angles_rad).to("cuda")
+    def tumble_angle_function_cuda(self, size=1):
+        random_angle_rad = self.distribution.rvs(size)
+        return torch.rad2deg(random_angle_rad).to(self.distribution.device)
+
+
+# Function to test multiple angle generations
+def test_multiple_generations(num_generations):
+    angle_generator = AngleGenerator_cuda()
+    start_time = time.time()
+
+    angles = angle_generator.tumble_angle_function_cuda(num_generations)
+
+    end_time = time.time()
+    print(
+        f"Generated {num_generations} angles in {end_time - start_time:.4f} seconds with mean {torch.mean(angles).item():.2f}")
 
 
 # Example usage
-angle = AngleGenerator_cuda().tumble_angle_function_cuda()
-print(angle)
+num_generations = 100000  # Number of times to generate angles
+test_multiple_generations(num_generations)
