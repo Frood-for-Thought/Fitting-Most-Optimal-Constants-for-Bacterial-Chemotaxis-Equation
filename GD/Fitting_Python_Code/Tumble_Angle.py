@@ -178,107 +178,140 @@ class AngleGenerator_cuda(CustomTumbleAngleDistribution):
         random_angle_rad = self.rvs(size)
         return torch.rad2deg(random_angle_rad).to(self.device)
 
+# # Function to test multiple angle generations
+# def test_multiple_generations(num_generations):
+#     angle_generator = AngleGenerator_cuda()
+#     start_time = time.time()
+#
+#     angles = angle_generator.tumble_angle_function_cuda(size=num_generations)
+#
+#     end_time = time.time()
+#     print(
+#         f"Generated {num_generations} angles in {end_time - start_time:.4f}
+#         seconds with mean {torch.mean(angles).item():.2f}"
+#         )
+
+
+# Function to pre-generate a large batch of angles
+def pre_generate_angles(total_angles):
+    angle_generator = AngleGenerator_cuda()
+    return angle_generator.tumble_angle_function_cuda(size=total_angles)
+
+# # CUDA Kernel Function
+# @torch.jit.script
+# def cuda_kernel(pre_generated_angles, results, num_loops, num_samples_per_loop, dt, Ptum, num_blocks,
+#                 threads_per_block):
+#     """
+#     The kernel is launched with the specified number of blocks and threads per block using
+#     torch.jit.script for JIT compilation.
+#     https://pytorch.org/docs/stable/jit_language_reference.html#language-reference
+#     """
+#     thread_id = torch.cuda.threadIdx.x + torch.cuda.blockIdx.x * torch.cuda.blockDim.x
+#     if thread_id < num_loops:
+#         for t in range(1, 1000, int(dt)):
+#             R_rt = torch.rand(1, device='cuda').item()
+#             if R_rt < Ptum:
+#                 Next_Angle = pre_generated_angles[thread_id * num_samples_per_loop + t]
+#                 results[thread_id, t] = Next_Angle
+#             else:
+#                 pass
+
+
+# # Function to run parallel loops using pre-generated angles
+# def run_parallel_loops(pre_generated_angles, num_loops, num_samples_per_loop, dt, Ptum):
+#     total_samples = num_loops * num_samples_per_loop
+#     assert pre_generated_angles.shape[0] >= total_samples, "Not enough pre-generated angles."
+#
+#     # Predefine tensor to store results.
+#     results = torch.zeros((num_loops, 1000), device='cuda')
+#
+#     # Generate random numbers for the loop decision in parallel
+#     R_rt = torch.rand((num_loops, 1000), device='cuda')
+#
+#     # Parallelize the outer loop using PyTorch operations
+#     for loop_idx in range(num_loops):
+#         Ptum_local = Ptum  # Use a local copy of Ptum to dynamically change it
+#         for t in range(0, 1000):
+#             if R_rt[loop_idx, t] < Ptum_local:
+#                 angle_idx = loop_idx * num_samples_per_loop + t
+#                 if angle_idx < pre_generated_angles.size(0):
+#                     results[loop_idx, t] = pre_generated_angles[angle_idx]
+#                 else:
+#                     results[loop_idx, t] = 0  # Handle out-of-bounds access gracefully
+#             else:
+#                 results[loop_idx, t] = 0  # Replace with appropriate logic
+#             # Update Ptum_local dynamically if needed
+#         print(f"End of loop {loop_idx}")
+#
+#     return results
+
+
+# # Define the inner loop as a top-level function
+# def inner_loop(loop_idx, R_rt, pre_generated_angles, results, num_samples_per_loop, Ptum):
+#     Ptum_local = Ptum  # Use a local copy of Ptum to dynamically change it
+#     for t in range(0, 1000):
+#         if R_rt[loop_idx, t] < Ptum_local:
+#             angle_idx = loop_idx * num_samples_per_loop + t
+#             if angle_idx < pre_generated_angles.size(0):
+#                 results[loop_idx, t] = pre_generated_angles[angle_idx]
+#             else:
+#                 results[loop_idx, t] = 0  # Handle out-of-bounds access gracefully
+#         else:
+#             pass
+#     print(f"End of loop {loop_idx}")
+#
+#
+# # Function to run parallel loops using pre-generated angles
+# def run_parallel_loops(pre_generated_angles, num_loops, num_samples_per_loop, dt, Ptum):
+#     total_samples = num_loops * num_samples_per_loop
+#     assert pre_generated_angles.shape[0] >= total_samples, "Not enough pre-generated angles."
+#
+#     # Predefine tensor to store results.
+#     results = torch.zeros((num_loops, 1000), device='cuda')
+#
+#     # Generate random numbers for the loop decision in parallel
+#     R_rt = torch.rand((num_loops, 1000), device='cuda')
+#
+#     # Use shared memory for results to be accessed by multiple processes
+#     results.share_memory_()
+#
+#     # Parallelize the outer loop using torch.multiprocessing.Pool
+#     # Utilizes mp.Pool and pool.starmap to parallelize the outer loop.
+#     with torch.multiprocessing.Pool() as pool:
+#         pool.starmap(inner_loop,
+#                      [(loop_idx, R_rt, pre_generated_angles, results, num_samples_per_loop, Ptum) for loop_idx in
+#                       range(num_loops)])
+#
+#     return results
+
+
+# Function to run parallel loops using pre-generated angles
+def run_parallel_loops(pre_generated_angles, num_loops, num_samples_per_loop, dt, Ptum):
+    total_samples = num_loops * num_samples_per_loop
+    assert pre_generated_angles.shape[0] >= total_samples, "Not enough pre-generated angles."
+
+    # Predefine tensor to store results.
+    results = torch.zeros((num_loops, 1000), device='cuda')
+
+    # Generate random numbers for the loop decision in parallel
+    R_rt = torch.rand((num_loops, 1000), device='cuda')
+
+    # Create a tensor for indices
+    indices = torch.arange(1000, device='cuda').repeat(num_loops, 1)
+    loop_indices = torch.arange(num_loops, device='cuda').view(-1, 1).repeat(1, 1000) * num_samples_per_loop
+
+    angle_indices = loop_indices + indices
+
+    # Handle out-of-bounds access gracefully
+    valid_indices = angle_indices < total_samples
+
+    # Set results based on valid indices and R_rt condition
+    results[valid_indices & (R_rt < Ptum)] = pre_generated_angles[angle_indices[valid_indices & (R_rt < Ptum)]]
+
+    return results
 
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method('spawn')  # Required for CUDA tensors
-    
-    # # Function to test multiple angle generations
-    # def test_multiple_generations(num_generations):
-    #     angle_generator = AngleGenerator_cuda()
-    #     start_time = time.time()
-    #
-    #     angles = angle_generator.tumble_angle_function_cuda(size=num_generations)
-    #
-    #     end_time = time.time()
-    #     print(
-    #         f"Generated {num_generations} angles in {end_time - start_time:.4f}
-    #         seconds with mean {torch.mean(angles).item():.2f}"
-    #         )
-
-    # Function to pre-generate a large batch of angles
-    def pre_generate_angles(total_angles):
-        angle_generator = AngleGenerator_cuda()
-        return angle_generator.tumble_angle_function_cuda(size=total_angles)
-
-    # # CUDA Kernel Function
-    # @torch.jit.script
-    # def cuda_kernel(pre_generated_angles, results, num_loops, num_samples_per_loop, dt, Ptum, num_blocks,
-    #                 threads_per_block):
-    #     """
-    #     The kernel is launched with the specified number of blocks and threads per block using
-    #     torch.jit.script for JIT compilation.
-    #     https://pytorch.org/docs/stable/jit_language_reference.html#language-reference
-    #     """
-    #     thread_id = torch.cuda.threadIdx.x + torch.cuda.blockIdx.x * torch.cuda.blockDim.x
-    #     if thread_id < num_loops:
-    #         for t in range(1, 1000, int(dt)):
-    #             R_rt = torch.rand(1, device='cuda').item()
-    #             if R_rt < Ptum:
-    #                 Next_Angle = pre_generated_angles[thread_id * num_samples_per_loop + t]
-    #                 results[thread_id, t] = Next_Angle
-    #             else:
-    #                 pass
-
-    # # Function to run parallel loops using CUDA
-    # def run_parallel_loops(pre_generated_angles, num_loops, num_samples_per_loop, dt, Ptum):
-    #     num_blocks = 408
-    #     threads_per_block = 256
-    #     # Predefine tensor to store results.
-    #     results = torch.empty((num_loops, 1000), device='cuda')
-    #     # Launch the CUDA kernel.
-    #     cuda_kernel[dim3(num_blocks), dim3(threads_per_block)](pre_generated_angles, results, num_loops,
-    #                                                            num_samples_per_loop, dt, Ptum, num_blocks,
-    #                                                            threads_per_block)
-    #     return results
-
-    # # Function to run parallel loops using pre-generated angles
-    # def run_parallel_loops(pre_generated_angles, num_loops, num_samples_per_loop, num_blocks=408, threads_per_block=256):
-    #     total_samples = num_loops * num_samples_per_loop
-    #     assert pre_generated_angles.shape[0] >= total_samples, "Not enough pre-generated angles."
-    #     # Predefine tensor.
-    #     results = torch.empty(num_loops, num_samples_per_loop, device='cuda')
-    #     # Draw angles from pre-generated batch
-    #     for i in range(num_loops):
-    #         start_idx = i * num_samples_per_loop
-    #         end_idx = start_idx + num_samples_per_loop
-    #         results[i, :] = pre_generated_angles[start_idx:end_idx]
-    #     return results
-
-    # Define the inner loop as a top-level function
-    def inner_loop(loop_idx, R_rt, pre_generated_angles, results, num_samples_per_loop, Ptum):
-        Ptum_local = Ptum  # Use a local copy of Ptum to dynamically change it
-        for t in range(0, 1000):
-            if R_rt[loop_idx, t] < Ptum_local:
-                angle_idx = loop_idx * num_samples_per_loop + t
-                if angle_idx < pre_generated_angles.size(0):
-                    results[loop_idx, t] = pre_generated_angles[angle_idx]
-                else:
-                    results[loop_idx, t] = 0  # Handle out-of-bounds access gracefully
-            else:
-                pass
-            # Update Ptum_local dynamically if needed
-
-    # Function to run parallel loops using pre-generated angles
-    def run_parallel_loops(pre_generated_angles, num_loops, num_samples_per_loop, dt, Ptum):
-        total_samples = num_loops * num_samples_per_loop
-        assert pre_generated_angles.shape[0] >= total_samples, "Not enough pre-generated angles."
-
-        # Predefine tensor to store results.
-        results = torch.zeros((num_loops, 1000), device='cuda')
-
-        # Generate random numbers for the loop decision in parallel
-        R_rt = torch.rand((num_loops, 1000), device='cuda')
-
-        # Use shared memory for results to be accessed by multiple processes
-        results.share_memory_()
-
-        # Parallelize the outer loop using torch.multiprocessing.Pool
-        with torch.multiprocessing.Pool() as pool:
-            pool.starmap(inner_loop,
-                         [(loop_idx, R_rt, pre_generated_angles, results, num_samples_per_loop, Ptum) for loop_idx in
-                          range(num_loops)])
-
-        return results
 
     # Example usage
     num_loops = 10000  # Number of parallel loops
