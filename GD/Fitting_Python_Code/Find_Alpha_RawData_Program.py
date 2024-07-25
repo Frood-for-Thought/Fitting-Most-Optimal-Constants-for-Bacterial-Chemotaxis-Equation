@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 # Import the Tumble Angle Module
-from Tumble_Angle import Angle_Generator
+from Tumble_Angle import AngleGenerator_cuda
 # Initialize the angle generator class to select from probability distribution.
-angle_generator = Angle_Generator()
+angle_generator = AngleGenerator_cuda()
 
 
 # Initialization and Food Concentration Calculation.
@@ -20,7 +20,8 @@ xbias = Ini_Food_Const * Food_Function
 
 
 # Generate a new tumble angle.
-next_tumble_angle = angle_generator.tumble_angle_function()
+next_tumble_angle = angle_generator.tumble_angle_function_cuda(size=10000)
+print(f"Tumble angles: {next_tumble_angle}\nWith mean: {next_tumble_angle.mean()}")
 Start_Angle = 90  # degrees
 Angle = Start_Angle
 
