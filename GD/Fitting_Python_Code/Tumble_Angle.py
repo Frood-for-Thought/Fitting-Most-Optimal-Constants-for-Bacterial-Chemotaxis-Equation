@@ -180,18 +180,54 @@ class AngleGenerator_cuda(CustomTumbleAngleDistribution):
 
 
 if __name__ == "__main__":
-    # Function to test multiple angle generations
-    def test_multiple_generations(num_generations):
-        angle_generator = AngleGenerator_cuda()
-        start_time = time.time()
-
-        angles = angle_generator.tumble_angle_function_cuda(size=num_generations)
-
-        end_time = time.time()
-        print(
-            f"Generated {num_generations} angles in {end_time - start_time:.4f} seconds with mean {torch.mean(angles).item():.2f}")
-
+    # # Function to test multiple angle generations
+    # def test_multiple_generations(num_generations):
+    #     angle_generator = AngleGenerator_cuda()
+    #     start_time = time.time()
+    #
+    #     angles = angle_generator.tumble_angle_function_cuda(size=num_generations)
+    #
+    #     end_time = time.time()
+    #     print(
+    #         f"Generated {num_generations} angles in {end_time - start_time:.4f} seconds with mean {torch.mean(angles).item():.2f}")
 
     # Example usage
-    num_generations = 100000  # Number of times to generate angles
-    test_multiple_generations(num_generations)
+    num_loops = 10000  # Number of parallel loops
+    num_samples_per_loop = 10000  # Number of samples per loop
+    total_angles_needed = num_loops * num_samples_per_loop
+
+    # Function to pre-generate a large batch of angles
+    def pre_generate_angles(total_angles):
+        angle_generator = AngleGenerator_cuda()
+        return angle_generator.tumble_angle_function_cuda(size=total_angles)
+
+    # Pre-generate angles
+    start_time = time.time()
+    pre_generated_angles = pre_generate_angles(total_angles_needed)
+    end_time = time.time()
+    print(f"Pre-generated {total_angles_needed} angles in {end_time - start_time:.4f} seconds")
+
+    # Function to run parallel loops using pre-generated angles
+    def run_parallel_loops(pre_generated_angles, num_loops, num_samples_per_loop):
+        total_samples = num_loops * num_samples_per_loop
+        assert pre_generated_angles.shape[0] >= total_samples, "Not enough pre-generated angles."
+
+        results = torch.empty(num_loops, num_samples_per_loop, device='cuda')
+
+        # Draw angles from pre-generated batch
+        for i in range(num_loops):
+            start_idx = i * num_samples_per_loop
+            end_idx = start_idx + num_samples_per_loop
+            results[i, :] = pre_generated_angles[start_idx:end_idx]
+
+        return results
+
+    # Run parallel loops using pre-generated angles
+    start_time = time.time()
+    results = run_parallel_loops(pre_generated_angles, num_loops, num_samples_per_loop)
+    end_time = time.time()
+    print(f"Ran {num_loops} loops in {end_time - start_time:.4f} seconds")
+
+    # Compute statistics
+    mean_angle = torch.mean(results)
+    print(f"Mean angle: {mean_angle:.2f} degrees")
