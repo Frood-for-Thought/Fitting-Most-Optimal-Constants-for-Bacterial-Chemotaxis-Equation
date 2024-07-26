@@ -5,6 +5,7 @@ import time
 import logging
 # Import the Tumble Angle Module
 from Tumble_Angle import Angle_Generator
+from Tumble_Angle import AngleGenerator_cuda
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,7 +24,6 @@ class NormMeanMatchDataGenerator:
         self.dt = dt  # Time step
         self.pos = DL * deme_start  # Position variable [µM]
         self.pos_ini = DL * deme_start  # Starting position [µM]
-        self.angle_generator = angle_generator  # Generating new orientation angle from PDF.
         self.max_iter = max_iter  # Number of data points generated.
 
         logging.info(f"Initialized NormMeanMatchDataGenerator with: alpha={alpha}, Angle={Angle}, Vo_max={Vo_max}, "
@@ -33,6 +33,7 @@ class NormMeanMatchDataGenerator:
         pos = self.pos
         Angle = self.Angle
         Calculated_Ave_Vd_Array = []
+        angle_generator = Angle_Generator()
         iter = 1
 
         while iter < self.max_iter:
@@ -45,7 +46,7 @@ class NormMeanMatchDataGenerator:
 
                 R_rt = np.random.rand()
                 if R_rt < Ptum:
-                    Next_Angle = self.angle_generator.tumble_angle_function()
+                    Next_Angle = angle_generator.tumble_angle_function()
                     Angle = (Angle + Next_Angle) % 360
                 else:
                     Dot_Product = np.cos(np.radians(Angle))
@@ -66,24 +67,30 @@ class NormMeanMatchDataGenerator:
     def simulate_bacterial_movement_cuda(self):
         # Initialize tensors for pos and Angle for all iterations
         position = torch.full((self.max_iter,), self.pos, device='cuda')
-        Angle = torch.full((self.max_iter,), self.Angle, device='cuda')
+        ang = torch.full((self.max_iter,), self.Angle, device='cuda')
         Calculated_Ave_Vd_Array = []
 
         time_steps = torch.arange(1, 1000, self.dt, device='cuda')
         total_angles = time_steps.size(0) * self.max_iter
         Rtroc_tensor = torch.tensor(self.Rtroc, device='cuda')  # Convert Rtroc to tensor
         R_rt = torch.rand(total_angles, device='cuda').view(time_steps.size(0), max_iter)
-        Next_Angle = self.angle_generator.tumble_angle_function_cuda(size=total_angles).view(time_steps.size(0),
+        # Initialize the angle generator class to select from probability distribution.
+        angle_generator = AngleGenerator_cuda()
+        Next_Angle = angle_generator.tumble_angle_function_cuda(size=total_angles).view(time_steps.size(0),
                                                                                              self.max_iter)
 
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
 
             # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
-            i = (position[t_idx] // self.DL).long()
-            Ptum = torch.empty_like(position[t_idx], device='cuda')
+            i = (position // self.DL).long()
+            Ptum = torch.empty_like(position, device='cuda')
 
-            tum_condition = (90 <= Angle) & (Angle < 270)
+            # Calculate Ptum based on the current ang for each iteration
+            mask = (ang >= 90) & (ang < 270)
+            tum_condition = (90 <= ang) & (ang < 270)
+            # Tumbling decision
+            R_rt_t = R_rt[t_idx]
             Ptum = torch.where(tum_condition,
                                self.dt * torch.exp(-self.d + self.alpha * self.Rtroc[i]),
                                self.dt * torch.exp(-self.d - self.alpha * self.Rtroc[i]))
