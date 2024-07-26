@@ -63,52 +63,26 @@ class NormMeanMatchDataGenerator:
 
         return np.array(Calculated_Ave_Vd_Array)
 
-    # def simulate_bacterial_movement_cuda(self):
-    #     num_blocks = 408  # Total blocks for optimal SM utilization
-    #     threads_per_block = 256  # Optimal threads per block
-    #     pos = torch.tensor(self.pos, device='cuda', dtype=torch.float)
-    #     Angle = torch.tensor(self.Angle, device='cuda', dtype=torch.float)
-    #     Rtroc_cuda = torch.tensor(self.Rtroc.values, device='cuda', dtype=torch.float)
-    #     Calculated_Ave_Vd_Array = []
-    #     iter = 1
-    #
-    #     while iter < self.max_iter:
-    #         for t in torch.arange(1, 1000, self.dt, device='cuda'):
-    #             i = (pos // self.DL).long()
-    #             if (90 <= Angle) and (Angle < 270):
-    #                 Ptum = self.dt * torch.exp(-self.d + self.alpha * Rtroc_cuda[i.item()])
-    #             else:
-    #                 Ptum = self.dt * torch.exp(-self.d - self.alpha * Rtroc_cuda[i.item()])
-    #
-    #             R_rt = torch.rand(1, device='cuda')
-    #             if R_rt < Ptum:
-    #                 Next_Angle = self.angle_generator.tumble_angle_function()
-    #                 Angle = (Angle + Next_Angle) % 360
-    #             else:
-    #                 Dot_Product = torch.cos(torch.deg2rad(Angle))
-    #                 pos += self.dt * self.Vo_max * Dot_Product
-    #
-    #             pos = torch.clamp(pos, 0, self.nl * self.DL)
-    #
-    #             if pos == 0 or pos >= self.nl * self.DL:
-    #                 break
-    #
-    #         Calculated_Ave_Vd = (pos - self.pos_ini) / t
-    #         Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.item())
-    #         pos = torch.tensor(self.DL * self.deme_start, device='cuda', dtype=torch.float)
-    #         iter += 1
-    #
-    #     return torch.tensor(Calculated_Ave_Vd_Array, device='cuda')
-
     def simulate_bacterial_movement_cuda(self):
-        num_blocks = 408  # Total blocks for optimal SM utilization
-        threads_per_block = 256  # Optimal threads per block
-        pos = torch.full((self.max_iter,), self.pos, device='cuda', dtype=torch.float)
-        Angle = torch.full((self.max_iter,), self.Angle, device='cuda', dtype=torch.float)
-
+        # Initialize tensors for pos and Angle for all iterations
+        position = torch.full((self.max_iter,), self.pos, device='cuda')
+        Angle = torch.full((self.max_iter,), self.Angle, device='cuda')
         Calculated_Ave_Vd_Array = []
-        for t in torch.arange(1, 1000, self.dt, device='cuda'):
-            i = (pos // self.DL).long()
+
+        time_steps = torch.arange(1, 1000, self.dt, device='cuda')
+        total_angles = time_steps.size(0) * self.max_iter
+        Rtroc_tensor = torch.tensor(self.Rtroc, device='cuda')  # Convert Rtroc to tensor
+        R_rt = torch.rand(total_angles, device='cuda').view(time_steps.size(0), max_iter)
+        Next_Angle = self.angle_generator.tumble_angle_function_cuda(size=total_angles).view(time_steps.size(0),
+                                                                                             self.max_iter)
+
+        for t_idx, t in enumerate(time_steps):
+            # Tensors inside the for loop are vectorized and in parallel.
+
+            # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
+            i = (position[t_idx] // self.DL).long()
+            Ptum = torch.empty_like(position[t_idx], device='cuda')
+
             tum_condition = (90 <= Angle) & (Angle < 270)
             Ptum = torch.where(tum_condition,
                                self.dt * torch.exp(-self.d + self.alpha * self.Rtroc[i]),
@@ -187,7 +161,7 @@ Rtroc = vd_chemotaxis * Grad * c_df_over_dc  # This numpy vector is calculated f
 alpha = 500
 diff = 1.16
 dt = 0.1
-max_iter = 3
+max_iter = 20000
 deme_start = 30
 
 # Initialize the data generator
