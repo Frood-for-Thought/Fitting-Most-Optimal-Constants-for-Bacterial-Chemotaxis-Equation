@@ -291,10 +291,10 @@ def run_parallel_loops(pre_generated_angles, num_loops, num_samples_per_loop, dt
     assert pre_generated_angles.shape[0] >= total_samples, "Not enough pre-generated angles."
 
     # Predefine tensor to store results.
-    results = torch.zeros((num_loops, 1000), device='cuda')
+    results = torch.zeros((num_loops, num_samples_per_loop), device='cuda')
 
     # Generate random numbers for the loop decision in parallel
-    R_rt = torch.rand((num_loops, 1000), device='cuda')
+    R_rt = torch.rand((num_loops, num_samples_per_loop), device='cuda')
 
     # Create a tensor for indices
     indices = torch.arange(1000, device='cuda').repeat(num_loops, 1)
