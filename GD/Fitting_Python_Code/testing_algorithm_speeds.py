@@ -68,11 +68,15 @@ class NormMeanMatchDataGenerator:
         # Initialize tensors for pos and Angle for all iterations
         position = torch.full((self.max_iter,), self.pos, device='cuda')
         ang = torch.full((self.max_iter,), self.Angle, device='cuda')
+        # ang = torch.randint(0, 360, (self.max_iter), device='cuda', dtype=torch.float)
         Calculated_Ave_Vd_Array = []
 
-        time_steps = torch.arange(1, 1000, self.dt, device='cuda')
+        time_steps = torch.arange(0, 1000, self.dt, device='cuda')
+        num_steps = time_steps.size(0)
         total_angles = time_steps.size(0) * self.max_iter
         Rtroc_tensor = torch.tensor(self.Rtroc, device='cuda')  # Convert Rtroc to tensor
+        Rtroc_tensor_size = Rtroc_tensor.size(0)
+        # The random numbers to be used.
         R_rt = torch.rand(total_angles, device='cuda').view(time_steps.size(0), max_iter)
         # Initialize the angle generator class to select from probability distribution.
         angle_generator = AngleGenerator_cuda()
@@ -84,16 +88,18 @@ class NormMeanMatchDataGenerator:
 
             # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
             i = (position // self.DL).long()
-            Ptum = torch.empty_like(position, device='cuda')
 
-            # Calculate Ptum based on the current ang for each iteration
-            mask = (ang >= 90) & (ang < 270)
+            # Initialize Ptum as a 2D tensor with dimensions [num_steps, max_iter].
+            Ptum = torch.zeros((num_steps, max_iter), device='cuda')
+
+            # Calculate Ptum based on the current ang for each iteration.
+            # Tumbling condition
             tum_condition = (90 <= ang) & (ang < 270)
-            # Tumbling decision
-            R_rt_t = R_rt[t_idx]
+
+            # Calculate Ptum using torch.where
             Ptum = torch.where(tum_condition,
-                               self.dt * torch.exp(-self.d + self.alpha * self.Rtroc[i]),
-                               self.dt * torch.exp(-self.d - self.alpha * self.Rtroc[i]))
+                               self.dt * torch.exp(-self.d + self.alpha * Rtroc_tensor[i]),
+                               self.dt * torch.exp(-self.d - self.alpha * Rtroc_tensor[i]))
 
             R_rt = torch.rand(self.max_iter, device='cuda')
             tumble_mask = R_rt < Ptum
