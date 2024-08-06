@@ -67,8 +67,8 @@ class NormMeanMatchDataGenerator:
     def simulate_bacterial_movement_cuda(self):
         # Initialize tensors for pos and Angle for all iterations
         position = torch.full((self.max_iter,), self.pos, device='cuda')
-        ang = torch.full((self.max_iter,), self.Angle, device='cuda')
-        # ang = torch.randint(0, 360, (self.max_iter), device='cuda', dtype=torch.float)
+        # ang = torch.full((self.max_iter,), self.Angle, device='cuda')
+        ang = torch.randint(0, 360, (self.max_iter,), device='cuda').float()  # Random angles
         Calculated_Ave_Vd_Array = []
 
         time_steps = torch.arange(0, 1000, self.dt, device='cuda')
