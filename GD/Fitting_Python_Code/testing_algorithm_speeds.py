@@ -91,27 +91,26 @@ class NormMeanMatchDataGenerator:
         # The random numbers to be used.
         R_rt = torch.rand(total_angles, device='cuda').view(num_steps, self.max_iter)
 
+        # Initialize Ptum as a 2D tensor with dimensions [num_steps, max_iter].
+        Ptum = torch.zeros((num_steps, self.max_iter), device='cuda')
+
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
 
             # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
             i = (position[t_idx, :] // self.DL).long()
 
-            # Initialize Ptum as a 2D tensor with dimensions [num_steps, max_iter].
-            Ptum = torch.zeros((num_steps, self.max_iter), device='cuda')
-
             # Direction for moving up or down gradient.
             # The boolean is true if it is moving down the gradient.
             direction_condition = (90 <= ang[t_idx]) & (ang[t_idx] < 270)
 
             # Calculate Ptum using torch.where
-            Ptum = torch.where(direction_condition,
+            Ptum[t_idx] = torch.where(direction_condition,
                                self.dt * torch.exp(-self.d + self.alpha * Rtroc_tensor[i]),
                                self.dt * torch.exp(-self.d - self.alpha * Rtroc_tensor[i]))
 
-            R_rt = torch.rand(self.max_iter, device='cuda')
-            tumble_mask = R_rt < Ptum
-            run_mask = ~tumble_mask
+            # Tumbling condition
+            tumble_mask = R_rt[t_idx] < Ptum[t_idx]
 
             next_angles = self.angle_generator.tumble_angle_function_cuda(tumble_mask.sum().item())
             Angle[tumble_mask] = (Angle[tumble_mask] + next_angles) % 360
