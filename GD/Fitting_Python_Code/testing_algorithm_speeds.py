@@ -65,39 +65,47 @@ class NormMeanMatchDataGenerator:
         return np.array(Calculated_Ave_Vd_Array)
 
     def simulate_bacterial_movement_cuda(self):
-        # Initialize tensors for pos and Angle for all iterations
-        position = torch.full((self.max_iter,), self.pos, device='cuda')
-        # ang = torch.full((self.max_iter,), self.Angle, device='cuda')
-        ang = torch.randint(0, 360, (self.max_iter,), device='cuda').float()  # Random angles
         Calculated_Ave_Vd_Array = []
 
+        # Initializing total time steps.
         time_steps = torch.arange(0, 1000, self.dt, device='cuda')
         num_steps = time_steps.size(0)
+
+        # Initialize tensors for pos and Angle for all iterations.
+        position = torch.zeros((num_steps, self.max_iter), device='cuda')
+        # Starting Position.
+        position[0, :] = torch.full((self.max_iter,), self.pos, device='cuda')
+        ang = torch.zeros((num_steps, self.max_iter), device='cuda')
+        # Starting Angle.
+        ang[0, :] = torch.randint(0, 360, (self.max_iter,), device='cuda').float()  # Random angles
+
+        # Calculating the Total Angles needed for the Algorithm.
         total_angles = time_steps.size(0) * self.max_iter
         Rtroc_tensor = torch.tensor(self.Rtroc, device='cuda')  # Convert Rtroc to tensor
         Rtroc_tensor_size = Rtroc_tensor.size(0)
-        # The random numbers to be used.
-        R_rt = torch.rand(total_angles, device='cuda').view(time_steps.size(0), max_iter)
+
         # Initialize the angle generator class to select from probability distribution.
         angle_generator = AngleGenerator_cuda()
-        Next_Angle = angle_generator.tumble_angle_function_cuda(size=total_angles).view(time_steps.size(0),
-                                                                                             self.max_iter)
+        Next_Angle = angle_generator.tumble_angle_function_cuda(size=total_angles).view(num_steps, self.max_iter)
+
+        # The random numbers to be used.
+        R_rt = torch.rand(total_angles, device='cuda').view(num_steps, self.max_iter)
 
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
 
             # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
-            i = (position // self.DL).long()
+            i = (position[t_idx, :] // self.DL).long()
 
             # Initialize Ptum as a 2D tensor with dimensions [num_steps, max_iter].
-            Ptum = torch.zeros((num_steps, max_iter), device='cuda')
+            Ptum = torch.zeros((num_steps, self.max_iter), device='cuda')
 
-            # Calculate Ptum based on the current ang for each iteration.
-            # Tumbling condition
-            tum_condition = (90 <= ang) & (ang < 270)
+            # Direction for moving up or down gradient.
+            # The boolean is true if it is moving down the gradient.
+            direction_condition = (90 <= ang[t_idx]) & (ang[t_idx] < 270)
 
             # Calculate Ptum using torch.where
-            Ptum = torch.where(tum_condition,
+            Ptum = torch.where(direction_condition,
                                self.dt * torch.exp(-self.d + self.alpha * Rtroc_tensor[i]),
                                self.dt * torch.exp(-self.d - self.alpha * Rtroc_tensor[i]))
 
