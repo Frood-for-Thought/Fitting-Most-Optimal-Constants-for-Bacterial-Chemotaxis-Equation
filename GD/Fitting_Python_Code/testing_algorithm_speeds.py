@@ -74,8 +74,13 @@ class NormMeanMatchDataGenerator:
         # Initialize tensors for pos and Angle for all iterations.
         position = torch.zeros((num_steps, self.max_iter), device='cuda')
         ang = torch.zeros((num_steps, self.max_iter), device='cuda')
+
         # Starting Position.
         position[0, :] = torch.full((self.max_iter,), self.pos, device='cuda')
+
+        # Apply model constraints
+        position = torch.clamp(position, 0, self.nl * self.DL)
+
         # Starting Angle.
         ang[0, :] = torch.randint(0, 360, (self.max_iter,), device='cuda').float()  # Random angles
 
@@ -125,12 +130,9 @@ class NormMeanMatchDataGenerator:
             position[t_idx] = torch.where(run_mask, position[t_idx] + self.dt * self.Vo_max * Dot_Product,
                                           position[t_idx])
 
-            # Apply model constraints
-            position[t_idx] = torch.clamp(position[t_idx], 0, self.nl * self.DL)
-
             # Calculate boundary_mask to identify bacteria reaching the end of the deme
             boundary_mask = position[t_idx] >= (self.pos + self.DL)
-            
+
             if boundary_mask.any():
                 position[t_idx, boundary_mask] = 0  # or some other logic to handle this case
 
