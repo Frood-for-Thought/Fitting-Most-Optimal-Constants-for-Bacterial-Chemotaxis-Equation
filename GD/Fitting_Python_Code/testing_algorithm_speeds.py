@@ -73,26 +73,30 @@ class NormMeanMatchDataGenerator:
 
         # Initialize tensors for pos and Angle for all iterations.
         position = torch.zeros((num_steps, self.max_iter), device='cuda')
+        ang = torch.zeros((num_steps, self.max_iter), device='cuda')
         # Starting Position.
         position[0, :] = torch.full((self.max_iter,), self.pos, device='cuda')
-        ang = torch.zeros((num_steps, self.max_iter), device='cuda')
         # Starting Angle.
         ang[0, :] = torch.randint(0, 360, (self.max_iter,), device='cuda').float()  # Random angles
 
-        # Calculating the Total Angles needed for the Algorithm.
-        total_angles = time_steps.size(0) * self.max_iter
+        # Calculating the Timed Rate of Change Tensor
         Rtroc_tensor = torch.tensor(self.Rtroc, device='cuda')  # Convert Rtroc to tensor
         Rtroc_tensor_size = Rtroc_tensor.size(0)
 
         # Initialize the angle generator class to select from probability distribution.
         angle_generator = AngleGenerator_cuda()
+        # Calculating the Total Angles needed for the Algorithm.
+        total_angles = num_steps * self.max_iter
         Next_Angle = angle_generator.tumble_angle_function_cuda(size=total_angles).view(num_steps, self.max_iter)
+        Next_Angle_Size = Next_Angle.size()
 
         # The random numbers to be used.
         R_rt = torch.rand(total_angles, device='cuda').view(num_steps, self.max_iter)
+        R_rt_size = R_rt.size()
 
         # Initialize Ptum as a 2D tensor with dimensions [num_steps, max_iter].
         Ptum = torch.zeros((num_steps, self.max_iter), device='cuda')
+        Ptum_size = Ptum.size()
 
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
@@ -111,6 +115,10 @@ class NormMeanMatchDataGenerator:
 
             # Tumbling condition
             tumble_mask = R_rt[t_idx] < Ptum[t_idx]
+
+            # Update angles based on tumbling condition
+            Next_Angle = self.angle_generator.tumble_angle_function_cuda(size=max_iter).to('cuda')
+            ang[tumble_mask, t_idx] = (ang[tumble_mask, t_idx] + Next_Angle[tumble_mask]) % 360
 
             next_angles = self.angle_generator.tumble_angle_function_cuda(tumble_mask.sum().item())
             Angle[tumble_mask] = (Angle[tumble_mask] + next_angles) % 360
