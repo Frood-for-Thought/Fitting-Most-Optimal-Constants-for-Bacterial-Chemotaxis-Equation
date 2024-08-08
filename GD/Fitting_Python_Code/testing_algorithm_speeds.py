@@ -125,8 +125,12 @@ class NormMeanMatchDataGenerator:
             position[t_idx] = torch.where(run_mask, position[t_idx] + self.dt * self.Vo_max * Dot_Product,
                                           position[t_idx])
 
+            # Apply model constraints
             position[t_idx] = torch.clamp(position[t_idx], 0, self.nl * self.DL)
-            boundary_mask = (position[t_idx] == 0) | (position[t_idx] >= self.nl * self.DL)
+
+            # Calculate boundary_mask to identify bacteria reaching the end of the deme
+            boundary_mask = position[t_idx] >= (self.pos + self.DL)
+            
             if boundary_mask.any():
                 position[t_idx, boundary_mask] = 0  # or some other logic to handle this case
 
