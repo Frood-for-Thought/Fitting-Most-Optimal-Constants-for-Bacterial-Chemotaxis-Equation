@@ -117,17 +117,18 @@ class NormMeanMatchDataGenerator:
             tumble_mask = R_rt[t_idx] < Ptum[t_idx]
 
             # Update angles based on tumbling condition
-            Next_Angle = self.angle_generator.tumble_angle_function_cuda(size=max_iter).to('cuda')
-            ang[tumble_mask, t_idx] = (ang[tumble_mask, t_idx] + Next_Angle[tumble_mask]) % 360
+            ang[t_idx] = torch.where(tumble_mask, (ang[t_idx] + Next_Angle[t_idx]) % 360, ang[t_idx])
 
-            next_angles = self.angle_generator.tumble_angle_function_cuda(tumble_mask.sum().item())
-            Angle[tumble_mask] = (Angle[tumble_mask] + next_angles) % 360
-            Dot_Product = torch.cos(torch.deg2rad(Angle[run_mask]))
-            pos[run_mask] += self.dt * self.Vo_max * Dot_Product
+            # Update position for running bacteria
+            run_mask = ~tumble_mask
+            Dot_Product = torch.cos(ang[t_idx] * (torch.pi / 180))  # Convert ang to radians manually
+            position[t_idx] = torch.where(run_mask, position[t_idx] + self.dt * self.Vo_max * Dot_Product,
+                                          position[t_idx])
 
-            pos = torch.clamp(pos, 0, self.nl * self.DL)
-            if (pos == 0).any() or (pos >= self.nl * self.DL).any():
-                break
+            position[t_idx] = torch.clamp(position[t_idx], 0, self.nl * self.DL)
+            boundary_mask = (position[t_idx] == 0) | (position[t_idx] >= self.nl * self.DL)
+            if boundary_mask.any():
+                position[t_idx, boundary_mask] = 0  # or some other logic to handle this case
 
         Calculated_Ave_Vd = (pos - self.pos_ini) / t
         Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.mean().item())
