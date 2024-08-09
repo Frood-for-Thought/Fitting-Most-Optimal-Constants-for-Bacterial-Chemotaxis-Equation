@@ -105,6 +105,8 @@ class NormMeanMatchDataGenerator:
 
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
+            if t_idx % 100 == 0:
+                print(f"Step {t_idx}/{num_steps}: Current time = {t.item()}")
 
             # Calculate boundary_mask to identify bacteria reaching the end of the deme
             boundary_mask = position[t_idx] >= (self.pos + self.DL)
@@ -152,9 +154,10 @@ class NormMeanMatchDataGenerator:
                     position[t_idx, active_mask]
                 )
 
-                # Set position and ang for the next time step
-                position[t_idx + 1, active_mask] = position[t_idx, active_mask]
-                ang[t_idx + 1, active_mask] = ang[t_idx, active_mask]
+                if t_idx < num_steps - 1:
+                    # Set position and ang for the next time step
+                    position[t_idx + 1, active_mask] = position[t_idx, active_mask]
+                    ang[t_idx + 1, active_mask] = ang[t_idx, active_mask]
 
             # Handle bacteria that have reached the boundary.
             if boundary_mask.any():
@@ -238,7 +241,7 @@ Rtroc = vd_chemotaxis * Grad * c_df_over_dc  # This numpy vector is calculated f
 alpha = 500
 diff = 1.16
 dt = 0.1
-max_iter = 5
+max_iter = 20000
 deme_start = 30
 
 # Initialize the data generator
