@@ -121,9 +121,11 @@ class NormMeanMatchDataGenerator:
                 direction_condition = (90 <= ang[t_idx, active_mask]) & (ang[t_idx, active_mask] < 270)
 
                 # Calculate Ptum using torch.where
-                Ptum[t_idx, active_mask] = torch.where(direction_condition,
-                                   self.dt * torch.exp(-self.d + self.alpha * Rtroc_tensor[i]),
-                                   self.dt * torch.exp(-self.d - self.alpha * Rtroc_tensor[i]))
+                Ptum[t_idx, active_mask] = torch.where(
+                    direction_condition,
+                    self.dt * torch.exp(-self.d + self.alpha * Rtroc_tensor[i]),
+                    self.dt * torch.exp(-self.d - self.alpha * Rtroc_tensor[i])
+                ).float()  # Convert to float to match Ptum's dtype.
 
                 # Tumbling condition
                 tumble_mask = R_rt[t_idx, active_mask] < Ptum[t_idx, active_mask]
@@ -149,6 +151,10 @@ class NormMeanMatchDataGenerator:
                     position[t_idx, active_mask] + self.dt * self.Vo_max * Dot_Product,
                     position[t_idx, active_mask]
                 )
+
+                # Set position and ang for the next time step
+                position[t_idx + 1, active_mask] = position[t_idx, active_mask]
+                ang[t_idx + 1, active_mask] = ang[t_idx, active_mask]
 
             # Handle bacteria that have reached the boundary.
             if boundary_mask.any():
@@ -232,7 +238,7 @@ Rtroc = vd_chemotaxis * Grad * c_df_over_dc  # This numpy vector is calculated f
 alpha = 500
 diff = 1.16
 dt = 0.1
-max_iter = 20000
+max_iter = 5
 deme_start = 30
 
 # Initialize the data generator
