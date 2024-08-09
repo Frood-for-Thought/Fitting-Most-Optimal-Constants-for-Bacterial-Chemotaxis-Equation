@@ -116,34 +116,65 @@ class NormMeanMatchDataGenerator:
                 # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
                 i = (position[t_idx, active_mask] // self.DL).long()
 
-            # Direction for moving up or down gradient.
-            # The boolean is true if it is moving down the gradient.
-            direction_condition = (90 <= ang[t_idx]) & (ang[t_idx] < 270)
+                # Direction for moving up or down gradient.
+                # The boolean is true if it is moving down the gradient.
+                direction_condition = (90 <= ang[t_idx, active_mask]) & (ang[t_idx, active_mask] < 270)
 
-            # Calculate Ptum using torch.where
-            Ptum[t_idx] = torch.where(direction_condition,
-                               self.dt * torch.exp(-self.d + self.alpha * Rtroc_tensor[i]),
-                               self.dt * torch.exp(-self.d - self.alpha * Rtroc_tensor[i]))
+                # Calculate Ptum using torch.where
+                Ptum[t_idx, active_mask] = torch.where(direction_condition,
+                                   self.dt * torch.exp(-self.d + self.alpha * Rtroc_tensor[i]),
+                                   self.dt * torch.exp(-self.d - self.alpha * Rtroc_tensor[i]))
 
-            # Tumbling condition
-            tumble_mask = R_rt[t_idx] < Ptum[t_idx]
-            # Update angles based on tumbling condition
-            ang[t_idx] = torch.where(tumble_mask, (ang[t_idx] + Next_Angle[t_idx]) % 360, ang[t_idx])
+                # Tumbling condition
+                tumble_mask = R_rt[t_idx, active_mask] < Ptum[t_idx, active_mask]
+                # Update angles based on tumbling condition.
+                # Condition: tumble_mask
+                # If the condition is True, update the angle with Next_Angle.
+                # If the condition is False, the bacteria does not tumble and the angle is left unchanged.
+                ang[t_idx, active_mask] = torch.where(
+                    tumble_mask,
+                    (ang[t_idx, active_mask] + Next_Angle[t_idx, active_mask]) % 360,
+                    ang[t_idx, active_mask]
+                )
 
-            # Running condition
-            run_mask = ~tumble_mask
-            # Update position based on running condition
-            Dot_Product = torch.cos(ang[t_idx] * (torch.pi / 180))  # Convert ang to radians manually
-            position[t_idx] = torch.where(run_mask, position[t_idx] + self.dt * self.Vo_max * Dot_Product,
-                                          position[t_idx])
+                # Running condition
+                run_mask = ~tumble_mask
+                # Update position based on running condition
+                Dot_Product = torch.cos(ang[t_idx, active_mask] * (torch.pi / 180))  # Convert ang to radians manually
+                # Condition: run_mask
+                # If the condition is True, update the position with Vo_max*Dot_Product*dt.
+                # If the condition is False, the bacteria does not move and the position is left unchanged.
+                position[t_idx, active_mask] = torch.where(
+                    run_mask,
+                    position[t_idx, active_mask] + self.dt * self.Vo_max * Dot_Product,
+                    position[t_idx, active_mask]
+                )
+
+            # Handle bacteria that have reached the boundary.
+            if boundary_mask.any():
+                # Calculate the time taken to reach the end of the deme.
+                time_to_boundary = (self.pos + self.DL - position[t_idx, boundary_mask]) / (
+                        self.dt * self.Vo_max * torch.cos(ang[t_idx, boundary_mask] * (torch.pi / 180)))
+                position[t_idx, boundary_mask] = self.pos + self.DL  # Set position to the boundary.
+
+                # Calculate the average velocity for the boundary-reached iterations.
+                Calculated_Ave_Vd = (self.DL) / (time_steps[t_idx] + time_to_boundary)
+                Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.mean().item())
 
             # Remove finished bacteria from further calculations
             if not active_mask.any():
                 break
 
-        Calculated_Ave_Vd = (pos - self.pos_ini) / t
-        Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.mean().item())
+        # Final calculation for the remaining iterations.
+        # Calculate boundary_mask to identify bacteria reaching the end of the deme
+        boundary_mask = position[-1, :] >= (self.pos + self.DL)
+        # Exclude finished bacteria from further calculations
+        active_mask = ~boundary_mask
+        if active_mask.any():
+            Calculated_Ave_Vd = (position[-1, :] - self.pos_ini) / (time_steps[-1] + self.dt)
+            Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.mean().item())
 
+        # Return the results
         return torch.tensor(Calculated_Ave_Vd_Array, device='cuda')
 
     def time_execution(self):
