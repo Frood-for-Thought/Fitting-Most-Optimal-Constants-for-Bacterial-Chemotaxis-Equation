@@ -106,8 +106,15 @@ class NormMeanMatchDataGenerator:
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
 
-            # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
-            i = (position[t_idx, :] // self.DL).long()
+            # Calculate boundary_mask to identify bacteria reaching the end of the deme
+            boundary_mask = position[t_idx] >= (self.pos + self.DL)
+
+            # Exclude finished bacteria from further calculations
+            active_mask = ~boundary_mask
+
+            if active_mask.any():
+                # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
+                i = (position[t_idx, active_mask] // self.DL).long()
 
             # Direction for moving up or down gradient.
             # The boolean is true if it is moving down the gradient.
@@ -120,21 +127,19 @@ class NormMeanMatchDataGenerator:
 
             # Tumbling condition
             tumble_mask = R_rt[t_idx] < Ptum[t_idx]
-
             # Update angles based on tumbling condition
             ang[t_idx] = torch.where(tumble_mask, (ang[t_idx] + Next_Angle[t_idx]) % 360, ang[t_idx])
 
-            # Update position for running bacteria
+            # Running condition
             run_mask = ~tumble_mask
+            # Update position based on running condition
             Dot_Product = torch.cos(ang[t_idx] * (torch.pi / 180))  # Convert ang to radians manually
             position[t_idx] = torch.where(run_mask, position[t_idx] + self.dt * self.Vo_max * Dot_Product,
                                           position[t_idx])
 
-            # Calculate boundary_mask to identify bacteria reaching the end of the deme
-            boundary_mask = position[t_idx] >= (self.pos + self.DL)
-
-            if boundary_mask.any():
-                position[t_idx, boundary_mask] = 0  # or some other logic to handle this case
+            # Remove finished bacteria from further calculations
+            if not active_mask.any():
+                break
 
         Calculated_Ave_Vd = (pos - self.pos_ini) / t
         Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.mean().item())
