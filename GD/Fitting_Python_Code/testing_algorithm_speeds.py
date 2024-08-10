@@ -116,27 +116,30 @@ class NormMeanMatchDataGenerator:
                 logging.info(f"Shape of active_mask: {active_mask.shape}")
                 logging.info(f"position[t_idx]: {position[t_idx]}")
 
-                # Calculate boundary_mask to identify bacteria reaching the end of the deme
-                boundary_mask = position[t_idx, active_mask] >= (self.pos + self.DL)
-                logging.info(f"Shape of boundary_mask: {boundary_mask.shape}")
+                # Filter positions and angles using active_mask
+                active_positions = position[t_idx, active_mask]
 
-                # Update the active mask: remove bacteria that have reached the boundary
-                active_mask[active_mask.clone()] &= ~boundary_mask
-                logging.info(f"Updated active_mask: {active_mask}")
+                # Calculate boundary_mask to identify bacteria reaching the end of the deme
+                boundary_mask = active_positions >= (self.pos + self.DL)
+                logging.info(f"Shape of boundary_mask: {boundary_mask.shape}")
 
                 # Handle bacteria that have reached the boundary.
                 if boundary_mask.any():
                     logging.info(
-                        f"Boundary reached at t={t} for bacteria with positions {position[t_idx, ~active_mask]}"
+                        f"Boundary reached at t={t} for bacteria with positions {active_positions[boundary_mask]}"
                     )
 
                     # Calculate the distance traveled for these bacteria.
-                    distance_travelled = position[t_idx, active_mask] - (self.deme_start * self.DL)
+                    distance_travelled = active_positions[boundary_mask] - (self.deme_start * self.DL)
                     total_time = t
 
                     # Calculate the average velocity for these bacteria.
                     Calculated_Ave_Vd = distance_travelled / total_time
                     Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd)
+
+                # Update the active mask: remove bacteria that have reached the boundary
+                active_mask[active_mask.clone()] = ~boundary_mask
+                logging.info(f"Updated active_mask: {active_mask}")
 
                 if active_mask.any():
                     # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
