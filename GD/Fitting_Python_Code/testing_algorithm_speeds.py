@@ -106,7 +106,7 @@ class NormMeanMatchDataGenerator:
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
             if t_idx % 100 == 0:
-                print(f"Step {t_idx}/{num_steps}: Current time = {t.item()}")
+                logging.info(f"Step {t_idx}/{num_steps}: Current time = {t.item()}")
 
             # Calculate boundary_mask to identify bacteria reaching the end of the deme
             boundary_mask = position[t_idx] >= (self.pos + self.DL)
@@ -115,9 +115,6 @@ class NormMeanMatchDataGenerator:
             active_mask = ~boundary_mask
 
             if active_mask.any():
-                # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
-                i = (position[t_idx, active_mask] // self.DL).long()
-
                 # Direction for moving up or down gradient.
                 # The boolean is true if it is moving down the gradient.
                 direction_condition = (90 <= ang[t_idx, active_mask]) & (ang[t_idx, active_mask] < 270)
@@ -161,10 +158,11 @@ class NormMeanMatchDataGenerator:
 
             # Handle bacteria that have reached the boundary.
             if boundary_mask.any():
+                logging.info(f"Current position: {position[t_idx, boundary_mask]}")
+
                 # Calculate the time taken to reach the end of the deme.
-                time_to_boundary = (self.pos + self.DL - position[t_idx, boundary_mask]) / (
-                        self.dt * self.Vo_max * torch.cos(ang[t_idx, boundary_mask] * (torch.pi / 180)))
-                position[t_idx, boundary_mask] = self.pos + self.DL  # Set position to the boundary.
+                distance_travelled = (position[t_idx, boundary_mask] - self.deme_start*self.DL + self.DL)
+                total_time = t
 
                 # Calculate the average velocity for the boundary-reached iterations.
                 Calculated_Ave_Vd = (self.DL) / (time_steps[t_idx] + time_to_boundary)
@@ -255,7 +253,7 @@ data_generator = NormMeanMatchDataGenerator(Rtroc, alpha, Angle, Vo_max, DL, nl,
 # The record_shapes=True option is used to record the shapes of the tensors involved in the operations being profiled.
 # This can be helpful in understanding how tensor dimensions change throughout your operations and
 # identify potential inefficiencies related to tensor shape manipulations.
-with torch.autograd.profiler.profile(record_shapes=True) as prof:
+with torch.autograd.profiler.profile(record_shapes=True, use_cuda=True) as prof:
     with torch.autograd.profiler.record_function("simulate_bacterial_movement_cuda"):
         cuda_data = data_generator.simulate_bacterial_movement_cuda()
 
