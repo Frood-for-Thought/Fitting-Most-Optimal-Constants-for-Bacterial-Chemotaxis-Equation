@@ -65,7 +65,8 @@ class NormMeanMatchDataGenerator:
         return np.array(Calculated_Ave_Vd_Array)
 
     def simulate_bacterial_movement_cuda(self):
-        Calculated_Ave_Vd_Array = []
+        # Initialize an empty tensor for storing the calculated average velocities on the GPU
+        Calculated_Ave_Vd_Array = torch.empty(0, device='cuda')
 
         # Initializing total time steps.
         time_steps = torch.arange(0, 1000, self.dt, device='cuda')
@@ -128,16 +129,15 @@ class NormMeanMatchDataGenerator:
                     )
 
                     # Calculate the distance traveled for these bacteria.
-                    distance_travelled = active_positions[boundary_mask] - (self.deme_start * self.DL)
+                    distance_travelled = active_positions[boundary_mask] - self.pos_ini
                     total_time = t
 
                     # Calculate the average velocity for these bacteria.
                     Calculated_Ave_Vd = distance_travelled / total_time
-                    Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd)
+                    Calculated_Ave_Vd_Array = torch.cat((Calculated_Ave_Vd_Array, Calculated_Ave_Vd))
 
                 # Update the active mask: remove bacteria that have reached the boundary
                 active_mask[active_mask.clone()] = ~boundary_mask
-                logging.info(f"Updated active_mask: {active_mask}")
 
                 if active_mask.any():
                     # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
@@ -191,17 +191,23 @@ class NormMeanMatchDataGenerator:
 
         # Final calculation for the remaining iterations.
         # Calculate boundary_mask to identify bacteria reaching the end of the deme
-        boundary_mask = position[-1, :] >= (self.pos_ini + self.DL)
-        # Exclude finished bacteria from further calculations
-        active_mask = ~boundary_mask
+        final_remaining_positions = position[-1, active_mask]
         if active_mask.any():
-            Calculated_Ave_Vd = (position[-1, active_mask] - self.pos_ini) / (time_steps[-1])
-            Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd)
+            Calculated_Ave_Vd = (final_remaining_positions - self.pos_ini) / (time_steps[-1])
+            if Calculated_Ave_Vd.numel() > 0:
+                Calculated_Ave_Vd_Array = torch.cat((Calculated_Ave_Vd_Array, Calculated_Ave_Vd))
 
         logging.info(Calculated_Ave_Vd_Array)
 
+        if Calculated_Ave_Vd_Array:
+            mean_results = Calculated_Ave_Vd_Array.mean()
+        else:
+            mean_results = float('nan')  # Return NaN if no valid velocities were calculated
+
+        logging.info(mean_results)
+
         # Return the results
-        return torch.tensor(Calculated_Ave_Vd_Array, device='cuda')
+        return mean_results
 
     def time_execution(self):
         # # Measure CPU execution time
