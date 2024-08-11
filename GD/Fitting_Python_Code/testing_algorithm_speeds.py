@@ -113,15 +113,13 @@ class NormMeanMatchDataGenerator:
 
             if active_mask.any():
                 # Check shapes to ensure correct alignment
-                logging.info(f"Shape of active_mask: {active_mask.shape}")
                 logging.info(f"position[t_idx]: {position[t_idx]}")
 
                 # Filter positions and angles using active_mask
                 active_positions = position[t_idx, active_mask]
 
                 # Calculate boundary_mask to identify bacteria reaching the end of the deme
-                boundary_mask = active_positions >= (self.pos + self.DL)
-                logging.info(f"Shape of boundary_mask: {boundary_mask.shape}")
+                boundary_mask = active_positions >= (self.pos_ini + self.DL)
 
                 # Handle bacteria that have reached the boundary.
                 if boundary_mask.any():
@@ -193,12 +191,14 @@ class NormMeanMatchDataGenerator:
 
         # Final calculation for the remaining iterations.
         # Calculate boundary_mask to identify bacteria reaching the end of the deme
-        boundary_mask = position[-1, :] >= (self.pos + self.DL)
+        boundary_mask = position[-1, :] >= (self.pos_ini + self.DL)
         # Exclude finished bacteria from further calculations
         active_mask = ~boundary_mask
         if active_mask.any():
-            Calculated_Ave_Vd = (position[-1, :] - self.pos_ini) / (time_steps[-1] + self.dt)
-            Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd.mean().item())
+            Calculated_Ave_Vd = (position[-1, active_mask] - self.pos_ini) / (time_steps[-1])
+            Calculated_Ave_Vd_Array.append(Calculated_Ave_Vd)
+
+        logging.info(Calculated_Ave_Vd_Array)
 
         # Return the results
         return torch.tensor(Calculated_Ave_Vd_Array, device='cuda')
