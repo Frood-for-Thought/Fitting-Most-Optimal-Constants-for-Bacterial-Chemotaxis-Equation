@@ -199,15 +199,16 @@ class NormMeanMatchDataGenerator:
 
         logging.info(Calculated_Ave_Vd_Array)
 
-        if Calculated_Ave_Vd_Array:
+        if Calculated_Ave_Vd_Array.numel() > 0:
             mean_results = Calculated_Ave_Vd_Array.mean()
         else:
             mean_results = float('nan')  # Return NaN if no valid velocities were calculated
+            return mean_results
 
         logging.info(mean_results)
 
         # Return the results
-        return mean_results
+        return mean_results.item()
 
     def time_execution(self):
         # # Measure CPU execution time
