@@ -65,8 +65,9 @@ class NormMeanMatchDataGenerator:
         return np.array(Calculated_Ave_Vd_Array)
 
     def simulate_bacterial_movement_cuda(self):
-        # Initialize an empty tensor for storing the calculated average velocities on the GPU
-        Calculated_Ave_Vd_Array = torch.empty(0, device='cuda')
+        # Initialize accumulators for sum of velocities and count
+        total_velocity_sum = torch.tensor(0.0, device='cuda')
+        total_count = torch.tensor(0, device='cuda')
 
         # Initializing total time steps.
         time_steps = torch.arange(0, 1000, self.dt, device='cuda')
@@ -113,8 +114,6 @@ class NormMeanMatchDataGenerator:
                 logging.info(f"Step {t_idx}/{num_steps}: Current time = {t.item()}")
 
             if active_mask.any():
-                # Check shapes to ensure correct alignment
-                logging.info(f"position[t_idx]: {position[t_idx]}")
 
                 # Filter positions and angles using active_mask
                 active_positions = position[t_idx, active_mask]
@@ -134,7 +133,10 @@ class NormMeanMatchDataGenerator:
 
                     # Calculate the average velocity for these bacteria.
                     Calculated_Ave_Vd = distance_travelled / total_time
-                    Calculated_Ave_Vd_Array = torch.cat((Calculated_Ave_Vd_Array, Calculated_Ave_Vd))
+
+                    # Accumulate sum of velocities and count
+                    total_velocity_sum += Calculated_Ave_Vd.sum()
+                    total_count += Calculated_Ave_Vd.numel()
 
                 # Update the active mask: remove bacteria that have reached the boundary
                 active_mask[active_mask.clone()] = ~boundary_mask
@@ -195,12 +197,14 @@ class NormMeanMatchDataGenerator:
         if active_mask.any():
             Calculated_Ave_Vd = (final_remaining_positions - self.pos_ini) / (time_steps[-1])
             if Calculated_Ave_Vd.numel() > 0:
-                Calculated_Ave_Vd_Array = torch.cat((Calculated_Ave_Vd_Array, Calculated_Ave_Vd))
+                # Accumulate sum of velocities and count of the remaining iterations.
+                total_velocity_sum += Calculated_Ave_Vd.sum()
+                total_count += Calculated_Ave_Vd.numel()
 
-        logging.info(Calculated_Ave_Vd_Array)
+        logging.info(f"total_velocity_sum = {total_velocity_sum}\ntotal_count = {total_count}")
 
-        if Calculated_Ave_Vd_Array.numel() > 0:
-            mean_results = Calculated_Ave_Vd_Array.mean()
+        if total_count > 0:
+            mean_results = total_velocity_sum / total_count
         else:
             mean_results = float('nan')  # Return NaN if no valid velocities were calculated
             return mean_results
@@ -265,7 +269,7 @@ Rtroc = vd_chemotaxis * Grad * c_df_over_dc  # This numpy vector is calculated f
 alpha = 500
 diff = 1.16
 dt = 0.1
-max_iter = 5
+max_iter = 1000
 deme_start = 30
 
 # Initialize the data generator
