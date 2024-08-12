@@ -73,7 +73,7 @@ class NormMeanMatchDataGenerator:
         time_steps = torch.arange(0, 1000, self.dt, device='cuda')
         num_steps = time_steps.size(0)
 
-        # Initialize tensors for pos and Angle for all iterations.
+        # Initialize tensors for pos and ang for all iterations.
         position = torch.zeros((num_steps, self.max_iter), device='cuda')
         ang = torch.zeros((num_steps, self.max_iter), device='cuda')
 
@@ -83,8 +83,8 @@ class NormMeanMatchDataGenerator:
         # Apply model constraints
         position = torch.clamp(position, 0, self.nl * self.DL)
 
-        # Starting Angle.
-        ang[0, :] = torch.randint(0, 360, (self.max_iter,), device='cuda').float()  # Random angles
+        # Starting Angle: All angles start at 'self.Angle'.
+        ang[0, :] = torch.full((self.max_iter,), self.Angle, device='cuda').float()
 
         # Calculating the Timed Rate of Change Tensor
         Rtroc_tensor = torch.tensor(self.Rtroc, device='cuda')  # Convert Rtroc to tensor
@@ -114,7 +114,6 @@ class NormMeanMatchDataGenerator:
                 logging.info(f"Step {t_idx}/{num_steps}: Current time = {t.item()}")
 
             if active_mask.any():
-
                 # Filter positions and angles using active_mask
                 active_positions = position[t_idx, active_mask]
 
@@ -123,10 +122,6 @@ class NormMeanMatchDataGenerator:
 
                 # Handle bacteria that have reached the boundary.
                 if boundary_mask.any():
-                    logging.info(
-                        f"Boundary reached at t={t} for bacteria with positions {active_positions[boundary_mask]}"
-                    )
-
                     # Calculate the distance traveled for these bacteria.
                     distance_travelled = active_positions[boundary_mask] - self.pos_ini
                     total_time = t
@@ -209,8 +204,6 @@ class NormMeanMatchDataGenerator:
             mean_results = float('nan')  # Return NaN if no valid velocities were calculated
             return mean_results
 
-        logging.info(mean_results)
-
         # Return the results
         return mean_results.item()
 
@@ -230,9 +223,7 @@ class NormMeanMatchDataGenerator:
         logging.info(f"CUDA execution time: {cuda_time:.4f} seconds")
 
         # Verify that both implementations produce similar results
-        logging.info("Verifying results")
-        logging.info(f"CPU data: {cpu_data}")
-        logging.info(f"CUDA data: {cuda_data.cpu().numpy()}")  # Convert CUDA tensor to numpy array for comparison
+        logging.info(f"CUDA data: {cuda_data}")
 
 # Parameters for the simulation
 # Initialization and Food Concentration Calculation.
@@ -266,10 +257,10 @@ Vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
 # Timed rate of change of the amount of receptor protein bound.
 Rtroc = vd_chemotaxis * Grad * c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
 
-alpha = 500
+alpha = 400
 diff = 1.16
 dt = 0.1
-max_iter = 1000
+max_iter = 20000
 deme_start = 30
 
 # Initialize the data generator
@@ -283,11 +274,14 @@ data_generator = NormMeanMatchDataGenerator(Rtroc, alpha, Angle, Vo_max, DL, nl,
 # The record_shapes=True option is used to record the shapes of the tensors involved in the operations being profiled.
 # This can be helpful in understanding how tensor dimensions change throughout your operations and
 # identify potential inefficiencies related to tensor shape manipulations.
-with torch.autograd.profiler.profile(record_shapes=True, use_cuda=True) as prof:
-    with torch.autograd.profiler.record_function("simulate_bacterial_movement_cuda"):
-        cuda_data = data_generator.simulate_bacterial_movement_cuda()
 
-print(prof.key_averages().table(sort_by="cuda_time_total"))
+# with torch.autograd.profiler.profile(record_shapes=True, use_cuda=True) as prof:
+#     with torch.autograd.profiler.record_function("simulate_bacterial_movement_cuda"):
+#         cuda_data = data_generator.simulate_bacterial_movement_cuda()
+#
+# print(prof.key_averages().table(sort_by="cuda_time_total"))
 
 # # Time the execution of both algorithms
 # data_generator.time_execution()
+
+print(data_generator.time_execution())
