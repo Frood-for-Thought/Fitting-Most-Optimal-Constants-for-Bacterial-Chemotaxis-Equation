@@ -225,63 +225,67 @@ class NormMeanMatchDataGenerator:
         # Verify that both implementations produce similar results
         logging.info(f"CUDA data: {cuda_data}")
 
-# Parameters for the simulation
-# Initialization and Food Concentration Calculation.
-nl = 101
-Grad = 0.000405  # µm^-1
-Max_Food_Conc = 60000  # µM
-DL = 310  # µm
-Food_Function = np.zeros(nl)
-for Food_Pos in range(nl):
-    Food_Function[Food_Pos] = np.exp(Grad * Food_Pos * DL)
-Ini_Food_Const = Max_Food_Conc / Food_Function[-1]
-xbias = Ini_Food_Const * Food_Function
 
-# Generate a new tumble angle.
-angle_generator = Angle_Generator()
-next_tumble_angle = angle_generator.tumble_angle_function()
-Start_Angle = 90  # degrees
-Angle = Start_Angle
+if __name__ == "__main__":
+    torch.multiprocessing.set_start_method('spawn')  # Required for CUDA tensors
 
-# The theoretical parameters have been pre-calculated to fit onto.
-# These parameters are for:
-#     nl = 101
-#     Grad = 0.000405  µm^-1
-#     Max_Food_Conc = 60000  µM
-#     DL = 310  µm
-input_parameters = '../input_parameters.xlsx'
-parameter_df = pd.read_excel(input_parameters)
-vd_chemotaxis = parameter_df.loc[:, 'drift_velocity']  # The theoretical drift velocity per deme.
-c_df_over_dc = parameter_df.loc[:, 'c_x_df_l_dc']  # Concentration*df/dc.
-Vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
-# Timed rate of change of the amount of receptor protein bound.
-Rtroc = vd_chemotaxis * Grad * c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
+    # Parameters for the simulation
+    # Initialization and Food Concentration Calculation.
+    nl = 101
+    Grad = 0.000405  # µm^-1
+    Max_Food_Conc = 60000  # µM
+    DL = 310  # µm
+    Food_Function = np.zeros(nl)
+    for Food_Pos in range(nl):
+        Food_Function[Food_Pos] = np.exp(Grad * Food_Pos * DL)
+    Ini_Food_Const = Max_Food_Conc / Food_Function[-1]
+    xbias = Ini_Food_Const * Food_Function
 
-alpha = 400
-diff = 1.16
-dt = 0.1
-max_iter = 20000
-deme_start = 30
+    # Generate a new tumble angle.
+    angle_generator = Angle_Generator()
+    next_tumble_angle = angle_generator.tumble_angle_function()
+    Start_Angle = 90  # degrees
+    Angle = Start_Angle
 
-# Initialize the data generator
-data_generator = NormMeanMatchDataGenerator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter)
+    # The theoretical parameters have been pre-calculated to fit onto.
+    # These parameters are for:
+    #     nl = 101
+    #     Grad = 0.000405  µm^-1
+    #     Max_Food_Conc = 60000  µM
+    #     DL = 310  µm
+    input_parameters = '../input_parameters.xlsx'
+    parameter_df = pd.read_excel(input_parameters)
+    vd_chemotaxis = parameter_df.loc[:, 'drift_velocity']  # The theoretical drift velocity per deme.
+    c_df_over_dc = parameter_df.loc[:, 'c_x_df_l_dc']  # Concentration*df/dc.
+    Vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
+    # Timed rate of change of the amount of receptor protein bound.
+    Rtroc = vd_chemotaxis * Grad * c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
 
-# torch.autograd provides classes and functions implementing automatic differentiation of arbitrary
-# scalar valued functions. It requires minimal changes to the existing code
-# - you only need to declare Tensor s for which gradients should be computed with the requires_grad=True keyword.
-# Autograd includes a profiler that lets you inspect the cost of different operators inside your model
-# - both on the CPU and GPU.
-# The record_shapes=True option is used to record the shapes of the tensors involved in the operations being profiled.
-# This can be helpful in understanding how tensor dimensions change throughout your operations and
-# identify potential inefficiencies related to tensor shape manipulations.
+    alpha = 400
+    diff = 1.16
+    dt = 0.1
+    max_iter = 20000
+    deme_start = 30
 
-# with torch.autograd.profiler.profile(record_shapes=True, use_cuda=True) as prof:
-#     with torch.autograd.profiler.record_function("simulate_bacterial_movement_cuda"):
-#         cuda_data = data_generator.simulate_bacterial_movement_cuda()
-#
-# print(prof.key_averages().table(sort_by="cuda_time_total"))
+    # Initialize the data generator
+    data_generator = NormMeanMatchDataGenerator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter)
 
-# # Time the execution of both algorithms
-# data_generator.time_execution()
+    # torch.autograd provides classes and functions implementing automatic differentiation of arbitrary
+    # scalar valued functions. It requires minimal changes to the existing code
+    # - you only need to declare Tensor s for which gradients should be computed with the requires_grad=True keyword.
+    # Autograd includes a profiler that lets you inspect the cost of different operators inside your model
+    # - both on the CPU and GPU.
+    # The record_shapes=True option is used to record the shapes of the tensors in the operations being profiled.
+    # This can be helpful in understanding how tensor dimensions change throughout your operations and
+    # identify potential inefficiencies related to tensor shape manipulations.
 
-print(data_generator.time_execution())
+    # with torch.autograd.profiler.profile(record_shapes=True, use_cuda=True) as prof:
+    #     with torch.autograd.profiler.record_function("simulate_bacterial_movement_cuda"):
+    #         cuda_data = data_generator.simulate_bacterial_movement_cuda()
+    #
+    # print(prof.key_averages().table(sort_by="cuda_time_total"))
+
+    # # Time the execution of both algorithms
+    # data_generator.time_execution()
+
+    print(data_generator.time_execution())
