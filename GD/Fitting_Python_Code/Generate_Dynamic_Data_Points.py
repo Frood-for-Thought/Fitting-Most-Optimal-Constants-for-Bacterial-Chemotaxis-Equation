@@ -2,6 +2,7 @@
 from Tumble_Angle import AngleGenerator_cuda
 import torch
 import logging
+import pandas as pd
 
 
 class Norm_Vd_Mean_Data_Generator:
@@ -24,36 +25,34 @@ class Norm_Vd_Mean_Data_Generator:
 
     def simulate_bacterial_movement_cuda(self):
         # Initialize accumulators for sum of velocities and count
-        total_velocity_sum = torch.tensor(0.0, device='cuda', dtype=torch.float16)
-        total_count = torch.tensor(0, device='cuda', dtype=torch.int8)
+        total_velocity_sum = torch.tensor(0.0, device='cuda')
+        total_count = torch.tensor(0, device='cuda')
 
         # Initializing total time steps.
-        time_steps = torch.arange(0, 1000, self.dt, device='cuda', dtype=torch.float16)
+        time_steps = torch.arange(0, 1000, self.dt, device='cuda')
         num_steps = time_steps.size(0)
 
         # Initialize tensors for pos and ang for all iterations.
-        position = torch.zeros((num_steps, self.max_iter), device='cuda', dtype=torch.float16)
-        ang = torch.zeros((num_steps, self.max_iter), device='cuda', dtype=torch.float16)
+        position = torch.zeros((num_steps, self.max_iter), device='cuda')
+        ang = torch.zeros((num_steps, self.max_iter), device='cuda')
 
         # Starting Position.
-        position[0, :] = torch.full((self.max_iter,), self.pos, device='cuda', dtype=torch.float16)
+        position[0, :] = torch.full((self.max_iter,), self.pos, device='cuda')
 
         # Apply model constraints
         position = torch.clamp(position, 0, self.nl * self.DL)
 
         # Starting Angle: All angles start at 'self.Angle'.
-        ang[0, :] = torch.full((self.max_iter,), self.Angle, device='cuda', dtype=torch.float16)
+        ang[0, :] = torch.full((self.max_iter,), self.Angle, device='cuda').float()
 
         # Calculating the Timed Rate of Change Tensor
         Rtroc_tensor = torch.tensor(self.Rtroc, device='cuda')  # Convert Rtroc to tensor
-        Rtroc_tensor_size = Rtroc_tensor.size(0)
 
         # Initialize the angle generator class to select from probability distribution.
         angle_generator = AngleGenerator_cuda()
         # Calculating the Total Angles needed for the Algorithm.
         total_angles = num_steps * self.max_iter
         Next_Angle = angle_generator.tumble_angle_function_cuda(size=total_angles).view(num_steps, self.max_iter)
-        Next_Angle = Next_Angle.to(dtype=torch.float16)
 
         # The random numbers to be used.
         R_rt = torch.rand(total_angles, device='cuda').view(num_steps, self.max_iter)
@@ -157,9 +156,39 @@ class Norm_Vd_Mean_Data_Generator:
         if total_count > 0:
             mean_results = total_velocity_sum / total_count
         else:
-            logging.info("No velocities were calculated.")
             mean_results = float('nan')  # Return NaN if no valid velocities were calculated
             return mean_results
 
         # Return the results
         return mean_results.item()
+
+
+if __name__ == "__main__":
+    torch.multiprocessing.set_start_method('spawn')  # Required for CUDA tensors
+
+    # Parameters for the simulation
+    Start_Angle = 90  # degrees
+    Angle = Start_Angle
+
+    # The theoretical parameters have been pre-calculated to fit onto.
+    nl = 101
+    Grad = 0.000405  # µm^-1
+    DL = 310  # µm
+    input_parameters = '../input_parameters.xlsx'
+    parameter_df = pd.read_excel(input_parameters)
+    vd_chemotaxis = parameter_df.loc[:, 'drift_velocity']  # The theoretical drift velocity per deme.
+    c_df_over_dc = parameter_df.loc[:, 'c_x_df_l_dc']  # Concentration*df/dc.
+    Vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
+    # Timed rate of change of the amount of receptor protein bound.
+    Rtroc = vd_chemotaxis * Grad * c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
+
+    alpha = 700
+    diff = 1.16
+    dt = 0.1
+    max_iter = 20000
+    deme_start = 30
+
+    # Initialize the data generator
+    data_generator = Norm_Vd_Mean_Data_Generator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter)
+
+    print(data_generator.simulate_bacterial_movement_cuda())
