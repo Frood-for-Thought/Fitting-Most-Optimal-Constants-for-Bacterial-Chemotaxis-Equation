@@ -24,6 +24,10 @@ class Norm_Vd_Mean_Data_Generator:
                      f"DL={DL}, nl={nl}, deme_start={deme_start}, diff={diff}, dt={dt}, max_iter={max_iter}")
 
     def simulate_bacterial_movement_cuda(self):
+        """
+        Generates the Dataset for one Epoch of the ML algorithm.
+        :return: Average Velocity
+        """
         # Initialize accumulators for sum of velocities and count
         total_velocity_sum = torch.tensor(0.0, device='cuda')
         total_count = torch.tensor(0, device='cuda')
