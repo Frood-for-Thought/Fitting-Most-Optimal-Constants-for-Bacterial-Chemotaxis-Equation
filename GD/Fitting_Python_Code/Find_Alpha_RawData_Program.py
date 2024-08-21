@@ -66,7 +66,7 @@ if __name__ == "__main__":
     max_iter = 20000
     deme_start = 30
 
-    # Initialize the data generator
+    # Initialize the data generator.
     data_generator = Norm_Vd_Mean_Data_Generator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter)
 
     ave_speed = data_generator.simulate_bacterial_movement_cuda()
