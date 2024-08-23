@@ -29,6 +29,8 @@ class Norm_Vd_Mean_Data_Generator:
         :return: Average Velocity
         """
         # Initialize accumulators for sum of velocities and count
+        velocities = torch.zeros(self.max_iter, device='cuda')
+        velocities_index = 0
         total_velocity_sum = torch.tensor(0.0, device='cuda')
         total_count = torch.tensor(0, device='cuda')
 
@@ -91,6 +93,12 @@ class Norm_Vd_Mean_Data_Generator:
                     # Accumulate sum of velocities and count
                     total_velocity_sum += Calculated_Ave_Vd.sum()
                     total_count += Calculated_Ave_Vd.numel()
+                    for v in Calculated_Ave_Vd:
+                        if velocities_index < self.max_iter:
+                            velocities[velocities_index] = v  # Directly assign tensor value on the GPU.
+                            velocities_index += 1
+                        else:
+                            break
 
                 # Update the active mask: remove bacteria that have reached the boundary
                 active_mask[active_mask.clone()] = ~boundary_mask
@@ -154,6 +162,12 @@ class Norm_Vd_Mean_Data_Generator:
                 # Accumulate sum of velocities and count of the remaining iterations.
                 total_velocity_sum += Calculated_Ave_Vd.sum()
                 total_count += Calculated_Ave_Vd.numel()
+                for v in Calculated_Ave_Vd:
+                    if velocities_index < self.max_iter:
+                        velocities[velocities_index] = v  # Directly assign tensor value on the GPU.
+                        velocities_index += 1
+                    else:
+                        pass
 
         logging.info(f"total_velocity_sum = {total_velocity_sum}\ntotal_count = {total_count}")
 
@@ -164,7 +178,7 @@ class Norm_Vd_Mean_Data_Generator:
             return mean_results
 
         # Return the results
-        return mean_results.item()
+        return mean_results.item(), velocities
 
 
 if __name__ == "__main__":
@@ -195,4 +209,6 @@ if __name__ == "__main__":
     # Initialize the data generator
     data_generator = Norm_Vd_Mean_Data_Generator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter)
 
-    print(data_generator.simulate_bacterial_movement_cuda())
+    average, velocities = data_generator.simulate_bacterial_movement_cuda()
+    print(average)
+    print(velocities)
