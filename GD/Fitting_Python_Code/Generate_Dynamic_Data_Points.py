@@ -19,6 +19,7 @@ class Norm_Vd_Mean_Data_Generator:
         self.pos = DL * deme_start  # Position variable [µM].
         self.pos_ini = DL * deme_start  # Starting position [µM].
         self.max_iter = max_iter  # Number of data points generated.
+        self.velocities = None
 
         logging.info(f"Initialized NormMeanMatchDataGenerator with: alpha={alpha}, Angle={Angle}, Vo_max={Vo_max}, "
                      f"DL={DL}, nl={nl}, deme_start={deme_start}, diff={diff}, dt={dt}, max_iter={max_iter}")
@@ -31,8 +32,6 @@ class Norm_Vd_Mean_Data_Generator:
         # Initialize accumulators for sum of velocities and count
         velocities = torch.zeros(self.max_iter, device='cuda')
         velocities_index = 0
-        total_velocity_sum = torch.tensor(0.0, device='cuda')
-        total_count = torch.tensor(0, device='cuda')
 
         # Initializing total time steps.
         time_steps = torch.arange(0, 1000, self.dt, device='cuda')
@@ -90,9 +89,7 @@ class Norm_Vd_Mean_Data_Generator:
                     # Calculate the average velocity for these bacteria.
                     Calculated_Ave_Vd = distance_travelled / total_time
 
-                    # Accumulate sum of velocities and count
-                    total_velocity_sum += Calculated_Ave_Vd.sum()
-                    total_count += Calculated_Ave_Vd.numel()
+                    # Append the values in the tensor onto another velocities tensor on 'cuda'.
                     for v in Calculated_Ave_Vd:
                         if velocities_index < self.max_iter:
                             velocities[velocities_index] = v  # Directly assign tensor value on the GPU.
@@ -159,9 +156,7 @@ class Norm_Vd_Mean_Data_Generator:
         if active_mask.any():
             Calculated_Ave_Vd = (final_remaining_positions - self.pos_ini) / (time_steps[-1])
             if Calculated_Ave_Vd.numel() > 0:
-                # Accumulate sum of velocities and count of the remaining iterations.
-                total_velocity_sum += Calculated_Ave_Vd.sum()
-                total_count += Calculated_Ave_Vd.numel()
+                # Any remaining values are appended to the tensor 'velocities'.
                 for v in Calculated_Ave_Vd:
                     if velocities_index < self.max_iter:
                         velocities[velocities_index] = v  # Directly assign tensor value on the GPU.
@@ -169,16 +164,22 @@ class Norm_Vd_Mean_Data_Generator:
                     else:
                         pass
 
-        logging.info(f"total_velocity_sum = {total_velocity_sum}\ntotal_count = {total_count}")
+        # The class attribute is set for the class when the function is called when using it to return.
+        self.velocities = velocities
+        return self.velocities  # Return the results
 
-        if total_count > 0:
-            mean_results = total_velocity_sum / total_count
-        else:
-            mean_results = float('nan')  # Return NaN if no valid velocities were calculated
-            return mean_results
-
-        # Return the results
-        return mean_results.item(), velocities
+    def calculate_average_velocity(self):
+        """
+        Calculates the average velocity from the CUDA tensor of velocities.
+        This method was only made for running this module as main.
+        The velocities average for the machine learning module is calculated within that module.
+        :param vel_tensor: Another tensor inserted if
+        :param self.velocities: Tensor of velocities.
+        :return: Average velocity as a float.
+        """
+        if self.velocities is None:
+            raise ValueError("Velocities have not been computed yet. Call simulate_bacterial_movement_cuda first.")
+        return torch.mean(self.velocities).item()
 
 
 if __name__ == "__main__":
@@ -209,6 +210,8 @@ if __name__ == "__main__":
     # Initialize the data generator
     data_generator = Norm_Vd_Mean_Data_Generator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter)
 
-    average, velocities = data_generator.simulate_bacterial_movement_cuda()
-    print(average)
-    print(velocities)
+    # When calculating vel, the self.velocities attribute is set to the 'data_generator' object.
+    # After self.velocities has been set to data_generator, use it to compute 'calculate_average_velocity()'.
+    vel = data_generator.simulate_bacterial_movement_cuda()
+    print(vel)
+    print(data_generator.calculate_average_velocity())
