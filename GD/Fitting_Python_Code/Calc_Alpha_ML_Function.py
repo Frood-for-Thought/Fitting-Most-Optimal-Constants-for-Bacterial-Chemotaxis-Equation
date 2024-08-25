@@ -9,8 +9,16 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     """
     Dynamic_Data_Evolving_Mean_Estimator, pronounced 'deme'.
     """
-    def __init__(self):
-        
+    def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate):
+        self.data_generator = data_generator
+        self.num_epochs = num_epochs
+        self.learning_rate = learning_rate
+
+        # Initialize the optimizer, loss function, and scheduler here
+        self.model = torch.nn.Linear(1, 1)  # Placeholder model
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
+        self.loss_function = torch.nn.MSELoss()
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=20, gamma=0.5)
 
 
 def train_alpha_model(Rtroc, Vo_max, DL, pos_ini, dt, Theory_Vel, num_iterations=80):
