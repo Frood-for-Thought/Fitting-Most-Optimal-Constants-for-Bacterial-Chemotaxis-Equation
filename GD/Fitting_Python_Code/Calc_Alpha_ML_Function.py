@@ -9,23 +9,8 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     """
     Dynamic_Data_Evolving_Mean_Estimator, pronounced 'deme'.
     """
-    def __init__(self, Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter):
-        self.Rtroc = Rtroc  # Time rate of change of the fractional amount of receptor (protein) bound.
-        self.alpha = alpha  # The alpha constant to be found.
-        self.Angle = Angle  # Bacterial orientation angle.
-        self.Vo_max = Vo_max  # Run Speed.
-        self.DL = DL  # Deme length [µM].
-        self.nl = nl  # Total number of demes.
-        self.deme_start = deme_start  # Deme starting position.
-        self.d = diff  # Diffusion constant.
-        self.dt = dt  # Time step.
-        self.pos = DL * deme_start  # Position variable [µM].
-        self.pos_ini = DL * deme_start  # Starting position [µM].
-        self.max_iter = max_iter  # Number of data points generated.
-
-    def generate_data(self):
-        norm_data_gen = Norm_Vd_Mean_Data_Generator(self.Rtroc, self.alpha, self.Angle, self.Vo_max, self.DL, self.nl,
-                                                    self.deme_start, self.d, self.dt, self.max_iter)
+    def __init__(self):
+        
 
 
 def train_alpha_model(Rtroc, Vo_max, DL, pos_ini, dt, Theory_Vel, num_iterations=80):
