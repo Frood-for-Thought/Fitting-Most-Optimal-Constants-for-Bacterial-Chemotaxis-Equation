@@ -199,7 +199,8 @@ if __name__ == "__main__":
     c_df_over_dc = parameter_df.loc[:, 'c_x_df_l_dc']  # Concentration*df/dc.
     Vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
     # Timed rate of change of the amount of receptor protein bound.
-    Rtroc = vd_chemotaxis * Grad * c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
+    # This numpy vector is calculated from the above constant and pandas series.
+    Rtroc = vd_chemotaxis * Grad * c_df_over_dc
 
     alpha = 700
     diff = 1.16
