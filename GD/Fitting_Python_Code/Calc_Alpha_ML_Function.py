@@ -12,13 +12,13 @@ class BaseDataGenerator(ABC):
     def generate_data(self):
         pass
 
-    @abstractmethod
-    def get_normalized_data(self):
-        pass
-
 
 # Specific Data Generator Implementation for Norm_Vd_Mean_Data_Generator
 class NormMeanDataGenerator(BaseDataGenerator):
+    """
+    This class inherits the format of BaseDataGenerator and is used
+    for the data generator 'Norm_Vd_Mean_Data_Generator'.
+    """
     def __init__(self, *args, **kwargs):
         # Initialize with parameters specific to Norm_Vd_Mean_Data_Generator
         self.generator = Norm_Vd_Mean_Data_Generator(*args, **kwargs)
@@ -33,6 +33,8 @@ class NormMeanDataGenerator(BaseDataGenerator):
 class Dynamic_Data_Evolving_Mean_Estimator:
     """
     Dynamic_Data_Evolving_Mean_Estimator, pronounced 'deme'.
+    The data_generator used has to follow the same format of the BaseDataGenerator
+    to make sure that the object used has a generate_data() method.
     """
     def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate):
         self.data_generator = data_generator
@@ -44,6 +46,13 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
         self.loss_function = torch.nn.MSELoss()
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=20, gamma=0.5)
+
+    def train(self):
+        for epoch in range(self.num_epochs):
+            # A new epoch of data is generated for every instance of the training loop.
+            data = self.data_generator.generate_data()
+
+            
 
 
 def train_alpha_model(Rtroc, Vo_max, DL, pos_ini, dt, Theory_Vel, num_iterations=80):
