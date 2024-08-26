@@ -3,6 +3,31 @@ from Tumble_Angle import AngleGenerator_cuda
 import torch
 import logging
 from Generate_Dynamic_Data_Points import Norm_Vd_Mean_Data_Generator
+from abc import ABC, abstractmethod
+
+
+# Abstract Base Class for Data Generators
+class BaseDataGenerator(ABC):
+    @abstractmethod
+    def generate_data(self):
+        pass
+
+    @abstractmethod
+    def get_normalized_data(self):
+        pass
+
+
+# Specific Data Generator Implementation for Norm_Vd_Mean_Data_Generator
+class NormMeanDataGenerator(BaseDataGenerator):
+    def __init__(self, *args, **kwargs):
+        # Initialize with parameters specific to Norm_Vd_Mean_Data_Generator
+        self.generator = Norm_Vd_Mean_Data_Generator(*args, **kwargs)
+
+    def generate_data(self):
+        """
+        :return: The datapoints generator specific to this system's generator method.
+        """
+        return self.generator.simulate_bacterial_movement_cuda()
 
 
 class Dynamic_Data_Evolving_Mean_Estimator:
