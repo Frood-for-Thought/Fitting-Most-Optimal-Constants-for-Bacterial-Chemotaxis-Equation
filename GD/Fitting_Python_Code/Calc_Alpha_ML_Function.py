@@ -36,13 +36,17 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     The data_generator used has to follow the same format of the BaseDataGenerator
     to make sure that the object used has a generate_data() method.
     """
-    def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate):
+    def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val, alpha):
         self.data_generator = data_generator
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
+        self.theoretical_val = theoretical_val
+        self.alpha = torch.tensor(alpha, requires_grad=True, device='cuda')  # Alpha is the feature to optimize.
 
-        # Initialize the optimizer, loss function, and scheduler here
-        self.model = torch.nn.Linear(1, 1)  # Placeholder model
+        # Remove the bias term from the linear layer to avoid interference with the intrinsic
+        # standard error of the dynamic mean.
+        self.model = torch.nn.Linear(1, 1, bias=False).cuda()
+        # Initialize the optimizer, loss function, and scheduler.
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
         self.loss_function = torch.nn.MSELoss()
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=20, gamma=0.5)
@@ -50,9 +54,26 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     def train(self):
         for epoch in range(self.num_epochs):
             # A new epoch of data is generated for every instance of the training loop.
-            data = self.data_generator.generate_data()
+            data = self.data_generator.generate_data()  # This is a tensor on the GPU
 
-            
+            # The tensor is passed through the model to compute the output using the linear layer.
+            output = self.model(data)
+
+            loss = self.loss_function(output, self.theoretical_val)
+
+            # Backward pass: Compute gradients
+            self.optimizer.zero_grad()  # Reset before each step to prevent incorrect update.
+            # Compute the gradient of the loss with respect to the weights but no bias in the model.
+            loss.backward()
+
+            # Apply learning rate schedule every 20 epochs.
+            if epoch % 20 == 0:
+                self.learning_rate /= (epoch // 20 + 1)
+                self.optimizer.param_groups[0]['lr'] = self.learning_rate
+
+            # Logging every 20 epochs.
+            if epoch % 20 == 0:
+                print(f"Epoch {epoch}, Loss: {loss.item()}, Alpha: {self.alpha.item()}")
 
 
 def train_alpha_model(Rtroc, Vo_max, DL, pos_ini, dt, Theory_Vel, num_iterations=80):
