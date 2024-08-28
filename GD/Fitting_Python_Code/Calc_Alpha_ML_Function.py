@@ -4,6 +4,7 @@ import torch
 import logging
 from Generate_Dynamic_Data_Points import Norm_Vd_Mean_Data_Generator
 from abc import ABC, abstractmethod
+import logging
 
 
 # Abstract Base Class for Data Generators
@@ -62,9 +63,15 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             loss = self.loss_function(output, self.theoretical_val)
 
             # Backward pass: Compute gradients
-            self.optimizer.zero_grad()  # Reset before each step to prevent incorrect update.
-            # Compute the gradient of the loss with respect to the weights but no bias in the model.
+            self.optimizer.zero_grad()  # Reset previous gradient to prevent incorrect update.
+            # Compute the gradient of the loss object with respect to the weights but no bias in the model.
             loss.backward()
+
+            # Update alpha using custom gradient descent.
+            # The .grad attribute of each parameter with the gradient.
+            with torch.no_grad():
+                for param in output.parameters():
+                    self.alpha -= self.learning_rate * param.grad
 
             # Apply learning rate schedule every 20 epochs.
             if epoch % 20 == 0:
@@ -73,4 +80,4 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
             # Logging every 20 epochs.
             if epoch % 20 == 0:
-                print(f"Epoch {epoch}, Loss: {loss.item()}, Alpha: {self.alpha.item()}")
+                logging.info(f"Epoch {epoch}, Loss: {loss.item()}, Alpha: {self.alpha.item()}")
