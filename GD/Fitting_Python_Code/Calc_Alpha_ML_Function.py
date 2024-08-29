@@ -47,9 +47,17 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         # Remove the bias term from the linear layer to avoid interference with the intrinsic
         # standard error of the dynamic mean.  y = W * x, (no 'b').
         self.model = torch.nn.Linear(1, 1, bias=False).cuda()
+
+        # Fix the weight to 1 and prevent it from being updated to limit resources.
+        # The weights of the linear layer won't interfere with optimizing alpha,
+        # but it will keep the data in the GPU to perform calculations with the loss function.
+        with torch.no_grad():
+            self.model.weight.fill_(1.0)  # Set weight to 1.
+            self.model.weight.requires_grad = False  # Disable gradient updates.
+
         # Initialize the optimizer with the model parameters and learning rate.
         # The optimizer will handle the update of alpha based on the computed gradients.
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = torch.optim.SGD([self.alpha], lr=self.learning_rate)
         self.loss_function = torch.nn.MSELoss()  # Mean Squared Error Loss function.
         # The learning rate scheduler will reduce the learning rate by 0.5 every 20 epochs.
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=20, gamma=0.5)
@@ -60,14 +68,17 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             data = self.data_generator.generate_data()  # This is a tensor on the GPU
 
             # The tensor is passed through the model to compute the output using the linear layer.
-            output = self.model(data)
+            output = self.model(data.unsqueeze(-1))  # Add dimension if needed for linear layer.
 
-            # Computing the model's MSE compared to the theoretical_val.
+            # Computing the MSE of the dynamic data point mean compared to the theoretical_val.
+            # L(α)=MSE(∑vj(α),vd)
             loss = self.loss_function(output, self.theoretical_val)
 
             # Backward pass: Compute gradients
             self.optimizer.zero_grad()  # Reset previous gradient to prevent incorrect update.
-            # Compute the gradient of the loss object with respect to the weights but no bias in the model.
+
+            # Compute the gradient of the loss function with respect to the parameters with requires_grad=True,
+            # in this case the alpha value.
             # ∂L(α)/∂α = 2/n*∑(vα(j)−vd)*∂vα(j)/∂α
             loss.backward()
 
@@ -77,17 +88,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
             # Scheduler step: Adjust the learning rate according to the schedule.
             self.scheduler.step()
-
-            # Update alpha using custom gradient descent.
-            # The .grad attribute of each parameter with the gradient.
-            with torch.no_grad():
-                for param in output.parameters():
-                    self.alpha -= self.learning_rate * param.grad
-
-            # Apply learning rate schedule every 20 epochs.
-            if epoch % 20 == 0:
-                self.learning_rate /= (epoch // 20 + 1)
-                self.optimizer.param_groups[0]['lr'] = self.learning_rate
 
             # Logging every 20 epochs.
             if epoch % 20 == 0:
