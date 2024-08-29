@@ -45,11 +45,13 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         self.alpha = torch.tensor(alpha, requires_grad=True, device='cuda')  # Alpha is the feature to optimize.
 
         # Remove the bias term from the linear layer to avoid interference with the intrinsic
-        # standard error of the dynamic mean.
+        # standard error of the dynamic mean.  y = W * x, (no 'b').
         self.model = torch.nn.Linear(1, 1, bias=False).cuda()
-        # Initialize the optimizer, loss function, and scheduler.
+        # Initialize the optimizer with the model parameters and learning rate.
+        # The optimizer will handle the update of alpha based on the computed gradients.
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
-        self.loss_function = torch.nn.MSELoss()
+        self.loss_function = torch.nn.MSELoss()  # Mean Squared Error Loss function.
+        # The learning rate scheduler will reduce the learning rate by 0.5 every 20 epochs.
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=20, gamma=0.5)
 
     def train(self):
@@ -60,12 +62,21 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # The tensor is passed through the model to compute the output using the linear layer.
             output = self.model(data)
 
+            # Computing the model's MSE compared to the theoretical_val.
             loss = self.loss_function(output, self.theoretical_val)
 
             # Backward pass: Compute gradients
             self.optimizer.zero_grad()  # Reset previous gradient to prevent incorrect update.
             # Compute the gradient of the loss object with respect to the weights but no bias in the model.
+            # ∂L(α)/∂α = 2/n*∑(vα(j)−vd)*∂vα(j)/∂α
             loss.backward()
+
+            # Update the model's parameters (alpha) using gradient descent.
+            # α_k_+_1 = α_k - γ*∂L(α)/∂α
+            self.optimizer.step()  # This internally updates alpha based on the gradients and learning rate.
+
+            # Scheduler step: Adjust the learning rate according to the schedule.
+            self.scheduler.step()
 
             # Update alpha using custom gradient descent.
             # The .grad attribute of each parameter with the gradient.
