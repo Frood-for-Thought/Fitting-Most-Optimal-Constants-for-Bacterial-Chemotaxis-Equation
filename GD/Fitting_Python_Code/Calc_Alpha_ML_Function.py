@@ -36,21 +36,33 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     """
     Dynamic_Data_Evolving_Mean_Estimator, pronounced 'deme'.
     Instead of finding the mean of clusters, this algorithm generates dynamically changing data for each iteration of
-    training using a function with an independent variable alpha.  This in turn produces a stochastic mean which is then
-    compared to an optimal theoretical value.  The loss function guides the ML algorithm to adjust the alpha accordingly
-    so the function can generate an evolving mean which becomes more accurate at estimating the theoretical value.
+    training using a stochastic function with an independent variable alpha.  This in turn produces a stochastic mean
+    which is then compared to an optimal theoretical target value.  Gradient descent guides the ML algorithm to adjust
+    the alpha accordingly so the dependent variable of the stochastic function will have an evolving mean that becomes
+    more aligned with the theoretical value.
     :param: data_generator: Has to follow the same format of the BaseDataGenerator to make sure that the object used
     has a generate_data() method.
+    :param: max_iter: The number of initial training iterations (data points generated) used by the ML model.
+    The generate_data() method must have max_iter as an argument.
+    :param: learning_rate: The learning rate for the ML algorithm during gradient descent.
+    :param: step_size: The number of iteration the training loop goes through before it adjusts the parameters max_iter
+    and learning_rate.
+    :param: num_epochs: The total number of G.D. training iterations used by the ML algorithm.
+    :param: theoretical_val: The target the model is trying to predict using the normalized data mean produced by
+    generate_data().
+    :param: alpha: The independent variable the ML model is optimizing for a stochastic function whose mean
     """
-    def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val, alpha, max_iter, step_size):
+    def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val, alpha, max_iter,
+                 step_size):
+
         self.data_generator = data_generator
-        self.step_size = step_size  # Determines the number of data points generated.
-        self.num_epochs = num_epochs
+        self.max_iter = max_iter
         self.learning_rate = learning_rate
+        self.step_size = step_size
+        self.num_epochs = num_epochs
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.theoretical_val = torch.tensor(theoretical_val, device=self.device)  # The
-        self.alpha = torch.tensor(alpha, requires_grad=True, device=self.device)  # Alpha is the feature to optimize.
-        self.max_iter = max_iter  # The number of initial training iterations used by the ML model.
+        self.theoretical_val = torch.tensor(theoretical_val, device=self.device)
+        self.alpha = torch.tensor(alpha, requires_grad=True, device=self.device)
 
         # Remove the bias term from the linear layer to avoid interference with the intrinsic
         # standard error of the dynamic mean.  y = W * x, (no 'b').
