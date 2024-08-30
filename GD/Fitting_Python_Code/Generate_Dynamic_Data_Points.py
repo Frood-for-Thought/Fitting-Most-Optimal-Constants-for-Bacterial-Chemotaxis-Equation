@@ -18,17 +18,22 @@ class Norm_Vd_Mean_Data_Generator:
         self.dt = dt  # Time step.
         self.pos = DL * deme_start  # Position variable [µM].
         self.pos_ini = DL * deme_start  # Starting position [µM].
-        self.max_iter = max_iter  # Number of data points generated.
         self.velocities = None
 
         logging.info(f"Initialized NormMeanMatchDataGenerator with: alpha={alpha}, Angle={Angle}, Vo_max={Vo_max}, "
                      f"DL={DL}, nl={nl}, deme_start={deme_start}, diff={diff}, dt={dt}, max_iter={max_iter}")
 
-    def simulate_bacterial_movement_cuda(self):
+    def simulate_bacterial_movement_cuda(self, max_iter):
         """
         Generates the Dataset for one Epoch of the ML algorithm.
-        :return: Average Velocity
+        :param: max_iter: The total number of iterations to run in parallel, (the number of data points generated).
+        :return: A CUDA tensor containing a normalized distribution of velocity data points.
         """
+        # Number of data points generated needs to remain in the method because the ML algorithm will adjust
+        # this parameter through the training iterations as it repeatedly calls this method.
+        # The iterations are increased so that the standard error is decreased by σ⁄√2.
+        self.max_iter = max_iter
+
         # Initialize accumulators for sum of velocities and count
         velocities = torch.zeros(self.max_iter, device='cuda')
         velocities_index = 0
