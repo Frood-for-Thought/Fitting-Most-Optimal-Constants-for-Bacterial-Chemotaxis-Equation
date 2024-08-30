@@ -47,9 +47,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     every number of step_size iterations in order to reduce the standard error on two fronts.  The learning_rate is
     reduced by learning_rate_gamma and the max_iter is increased by max_iter_factor so that the standard error is
     decreased by σ⁄√(max_iter_factor).  These hyperparameters will have to be balanced with the total number of
-    epoch iterations in order to best minimize the standard error.
-
-    The process is similar to how simulated annealing probabilistically accepts worse solutions to escape local minima.
+    epoch iterations in order to best minimize the standard error. The process is similar to how simulated annealing
+    tries to escape a local minima, however, in this case the step_size schedules an adjustment of hyperparameters to
+    minimize the intrinsic standard error.
 
     :param: data_generator: Has to follow the same format of the BaseDataGenerator to make sure that the object used
     has a generate_data() method.
