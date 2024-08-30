@@ -31,7 +31,7 @@ class Norm_Vd_Mean_Data_Generator:
         """
         # Number of data points generated needs to remain in the method because the ML algorithm will adjust
         # this parameter through the training iterations as it repeatedly calls this method.
-        # The iterations are increased so that the standard error is decreased by σ⁄√2.
+        # The max_iter gives a standard error of σ⁄√(max_iter) for the normalized data velocities.
         self.max_iter = max_iter
 
         # Initialize accumulators for sum of velocities and count

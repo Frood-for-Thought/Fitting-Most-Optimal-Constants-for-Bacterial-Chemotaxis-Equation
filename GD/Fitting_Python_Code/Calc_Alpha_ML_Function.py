@@ -35,16 +35,31 @@ class NormMeanDataGenerator(BaseDataGenerator):
 class Dynamic_Data_Evolving_Mean_Estimator:
     """
     Dynamic_Data_Evolving_Mean_Estimator, pronounced 'deme'.
+
     Instead of finding the mean of clusters, this algorithm generates dynamically changing data for each iteration of
     training using a stochastic function with an independent variable alpha.  This in turn produces a stochastic mean
     which is then compared to an optimal theoretical target value.  Gradient descent guides the ML algorithm to adjust
     the alpha accordingly so the dependent variable of the stochastic function will have an evolving mean that becomes
     more aligned with the theoretical value.
+
+    The intrinsic limitation of dynamically generating normalized data are their mean's standard error.
+    Therefore, the ML algorithm iteratively refines the learning_rate and max_iter, (no. data points generated),
+    every number of step_size iterations in order to reduce the standard error on two fronts.  The learning_rate is
+    reduced by learning_rate_gamma and the max_iter is increased by max_iter_factor so that the standard error is
+    decreased by σ⁄√(max_iter_factor).  These hyperparameters will have to be balanced with the total number of
+    epoch iterations in order to best minimize the standard error.
+
+    The process is similar to how simulated annealing probabilistically accepts worse solutions to escape local minima.
+
     :param: data_generator: Has to follow the same format of the BaseDataGenerator to make sure that the object used
     has a generate_data() method.
     :param: max_iter: The number of initial training iterations (data points generated) used by the ML model.
     The generate_data() method must have max_iter as an argument.
+    :param: max_iter_limit: The upper limit for max_iter to prevent it from growing indefinitely.
+    :param: max_iter_factor: The factor by which max_iter is multiplied each step (e.g., 2 to double).
     :param: learning_rate: The learning rate for the ML algorithm during gradient descent.
+    :param: learning_rate_gamma: The factor by which the learning rate is multiplied each step_size.
+    learning_rate_gamma = 0.85 gives ~ 1/2, 1/3, 1/4.
     :param: step_size: The number of iteration the training loop goes through before it adjusts the parameters max_iter
     and learning_rate.
     :param: num_epochs: The total number of G.D. training iterations used by the ML algorithm.
@@ -52,12 +67,15 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     generate_data().
     :param: alpha: The independent variable the ML model is optimizing for a stochastic function whose mean
     """
-    def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val, alpha, max_iter,
-                 step_size):
+    def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val, alpha,
+                 max_iter, step_size=20, max_iter_limit=20000, max_iter_factor=2, learning_rate_gamma=0.85):
 
         self.data_generator = data_generator
         self.max_iter = max_iter
+        self.max_iter_limit = max_iter_limit
+        self.max_iter_factor = max_iter_factor
         self.learning_rate = learning_rate
+        self.learning_rate_gamma = learning_rate_gamma
         self.step_size = step_size
         self.num_epochs = num_epochs
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -79,13 +97,13 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         # The optimizer will handle the update of alpha based on the computed gradients.
         self.optimizer = torch.optim.SGD([self.alpha], lr=self.learning_rate)
         self.loss_function = torch.nn.MSELoss()  # Mean Squared Error Loss function.
-        # The learning rate scheduler will reduce the learning rate by 0.5 every 20 epochs.
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=20, gamma=0.5)
+        # The learning rate scheduler will reduce the learning rate by learning_rate_reduction every step_size epochs.
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=self.step_size, gamma=self.learning_rate_gamma)
 
     def train(self):
         for epoch in range(self.num_epochs):
             # A new epoch of data is generated for every instance of the training loop.
-            data = self.data_generator.generate_data()  # This is a tensor on the GPU
+            data = self.data_generator.generate_data(self.max_iter)  # This is a tensor on the GPU
 
             # The tensor is passed through the model to compute the output using the linear layer.
             output = self.model(data.unsqueeze(-1))  # Add dimension if needed for linear layer.
@@ -109,10 +127,11 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # Scheduler step: Adjust the learning rate according to the schedule.
             self.scheduler.step()
 
-            # Logging every 20 epochs.
-            if epoch % 20 == 0:
-                # Double the number of data samples generated every 20 epochs.
-                self.max_iter *= 2
-                if self.max_iter > 20000:
-                    self.max_iter = 20000
+            # Logging every step_size epochs.
+            if epoch % self.step_size == 0:
+                # Update max_iter.
+                new_max_iter = self.max_iter * self.max_iter_factor
+                # Prevent max_iter from going over the max_iter_limit.
+                self.max_iter = min(new_max_iter, self.max_iter_limit)
+
                 logging.info(f"Epoch {epoch}, Loss: {loss.item()}, Alpha: {self.alpha.item()}")
