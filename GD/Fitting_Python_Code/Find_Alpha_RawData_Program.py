@@ -7,7 +7,7 @@ from Tumble_Angle import AngleGenerator_cuda
 # Initialize the angle generator class to select from probability distribution.
 angle_generator = AngleGenerator_cuda()
 from Generate_Dynamic_Data_Points import Norm_Vd_Mean_Data_Generator
-from Calc_Alpha_ML_Function import BaseDataGenerator
+from Calc_Alpha_ML_Function import BaseDataGenerator, Dynamic_Data_Evolving_Mean_Estimator
 
 
 # Initialization and Food Concentration Calculation.
@@ -67,26 +67,27 @@ class NormMeanDataGenerator(BaseDataGenerator):
         # Initialize with parameters specific to Norm_Vd_Mean_Data_Generator
         self.generator = Norm_Vd_Mean_Data_Generator(*args, **kwargs)
 
-    def generate_data(self):
+    def generate_data(self, max_iter):
         """
+        :param: max_iter: The total number of iterations to run in parallel, (the number of data points generated).
         :return: The datapoints generator specific to this system's generator method.
         """
-        return self.generator.simulate_bacterial_movement_cuda()
+        return self.generator.simulate_bacterial_movement_cuda(max_iter)
 
 
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method('spawn')  # Required for CUDA tensors
 
-    alpha = 200
+    alpha = 500
     Start_Angle = 90  # degrees
     Angle = Start_Angle
     diff = 1.16
     dt = 0.1
-    max_iter = 20000
+    max_iter = 1000
     deme_start = 30
 
     # Initialize the data generator.
-    data_generator = NormMeanDataGenerator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter)
+    data_generator = NormMeanDataGenerator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt)
 
 # Pos_Alpha_Array = []
 # Ni = 2
