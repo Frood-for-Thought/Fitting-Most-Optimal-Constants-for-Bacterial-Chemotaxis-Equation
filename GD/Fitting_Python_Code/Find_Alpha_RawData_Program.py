@@ -44,8 +44,8 @@ deme_start = 30
 
 # Values used for Dynamic_Data_Evolving_Mean_Estimator.
 num_epochs = 100
-learning_rate = 1 / (100 * Rtroc(deme_start))
-theoretical_val = vd_chemotaxis(deme_start)
+learning_rate = 1 / (100 * Rtroc[deme_start])
+theoretical_val = vd_chemotaxis[deme_start]
 max_iter = 1000
 
 # Plotting
@@ -97,6 +97,8 @@ if __name__ == "__main__":
 
     optim_alpha, loss_value = Dynamic_Data_Evolving_Mean_Estimator(data_generator, num_epochs, learning_rate,
                                                                    theoretical_val, alpha, max_iter).train()
+
+    print(optim_alpha, loss_value)
 
 # Pos_Alpha_Array = []
 # Ni = 2

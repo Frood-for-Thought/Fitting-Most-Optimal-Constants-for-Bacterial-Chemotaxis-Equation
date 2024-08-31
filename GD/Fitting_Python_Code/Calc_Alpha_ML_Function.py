@@ -78,13 +78,17 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         self.learning_rate_gamma = learning_rate_gamma
         self.step_size = step_size
         self.num_epochs = num_epochs
+
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.theoretical_val = torch.tensor(theoretical_val, device=self.device)
-        self.alpha = torch.tensor(alpha, requires_grad=True, device=self.device)
+        # Precompute a theoretical value tensor to match the shape of 'output' for the 'loss_function'.
+        self.theoretical_val = torch.tensor(theoretical_val, dtype=torch.float32,
+                                            device=self.device).unsqueeze(0).expand(max_iter, 1)
+        # Convert the alpha integer to a tensor to be optimized.
+        self.alpha = torch.tensor(alpha, requires_grad=True, dtype=torch.float16, device=self.device)
 
         # Remove the bias term from the linear layer to avoid interference with the intrinsic
         # standard error of the dynamic mean.  y = W * x, (no 'b').
-        self.model = torch.nn.Linear(1, 1, bias=False).cuda()
+        self.model = torch.nn.Linear(1, 1, bias=False).to(self.device)
 
         # Fix the weight to 1 and prevent it from being updated to limit resources.
         # The weights of the linear layer won't interfere with optimizing alpha,
