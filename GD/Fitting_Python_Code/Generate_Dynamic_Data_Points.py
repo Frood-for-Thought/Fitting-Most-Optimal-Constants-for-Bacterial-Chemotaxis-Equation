@@ -214,10 +214,10 @@ if __name__ == "__main__":
     deme_start = 30
 
     # Initialize the data generator
-    data_generator = Norm_Vd_Mean_Data_Generator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter)
+    data_generator = Norm_Vd_Mean_Data_Generator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt)
 
     # When calculating vel, the self.velocities attribute is set to the 'data_generator' object.
     # After self.velocities has been set to data_generator, use it to compute 'calculate_average_velocity()'.
-    vel = data_generator.simulate_bacterial_movement_cuda()
+    vel = data_generator.simulate_bacterial_movement_cuda(max_iter)
     print(vel)
     print(data_generator.calculate_average_velocity())
