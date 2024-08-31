@@ -135,3 +135,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 self.max_iter = min(new_max_iter, self.max_iter_limit)
 
                 logging.info(f"Epoch {epoch}, Loss: {loss.item()}, Alpha: {self.alpha.item()}")
+
+            # Return the final optimized alpha and the final loss value
+            return self.alpha.item(), loss.item()
