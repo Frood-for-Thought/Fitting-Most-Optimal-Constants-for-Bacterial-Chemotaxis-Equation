@@ -6,7 +6,7 @@ import pandas as pd
 
 
 class Norm_Vd_Mean_Data_Generator:
-    def __init__(self, Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt, max_iter):
+    def __init__(self, Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt):
         self.Rtroc = Rtroc  # Time rate of change of the fractional amount of receptor (protein) bound.
         self.alpha = alpha  # The alpha constant to be found.
         self.Angle = Angle  # Bacterial orientation angle.
@@ -20,8 +20,8 @@ class Norm_Vd_Mean_Data_Generator:
         self.pos_ini = DL * deme_start  # Starting position [µM].
         self.velocities = None
 
-        logging.info(f"Initialized NormMeanMatchDataGenerator with: alpha={alpha}, Angle={Angle}, Vo_max={Vo_max}, "
-                     f"DL={DL}, nl={nl}, deme_start={deme_start}, diff={diff}, dt={dt}, max_iter={max_iter}")
+        logging.info(f"Initialized NormMeanMatchDataGenerator with: alpha={alpha}, Angle={Angle}, Vo_max={Vo_max},"
+                     f" DL={DL}, nl={nl}, deme_start={deme_start}, diff={diff}, dt={dt}")
 
     def simulate_bacterial_movement_cuda(self, max_iter):
         """
