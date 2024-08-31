@@ -34,6 +34,20 @@ Vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
 # Timed rate of change of the amount of receptor protein bound.
 Rtroc = vd_chemotaxis*Grad*c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
 
+# Values used for Norm_Vd_Mean_Data_Generator.
+alpha = 500
+Start_Angle = 90  # degrees
+Angle = Start_Angle
+diff = 1.16
+dt = 0.1
+deme_start = 30
+
+# Values used for Dynamic_Data_Evolving_Mean_Estimator.
+num_epochs = 100
+learning_rate = 1 / (100 * Rtroc(deme_start))
+theoretical_val = vd_chemotaxis(deme_start)
+max_iter = 1000
+
 # Plotting
 fig, ax1 = plt.subplots()
 
@@ -78,16 +92,11 @@ class NormMeanDataGenerator(BaseDataGenerator):
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method('spawn')  # Required for CUDA tensors
 
-    alpha = 500
-    Start_Angle = 90  # degrees
-    Angle = Start_Angle
-    diff = 1.16
-    dt = 0.1
-    max_iter = 1000
-    deme_start = 30
-
     # Initialize the data generator.
     data_generator = NormMeanDataGenerator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt)
+
+    optim_alpha, loss_value = Dynamic_Data_Evolving_Mean_Estimator(data_generator, num_epochs, learning_rate,
+                                                                   theoretical_val, alpha, max_iter).train()
 
 # Pos_Alpha_Array = []
 # Ni = 2
