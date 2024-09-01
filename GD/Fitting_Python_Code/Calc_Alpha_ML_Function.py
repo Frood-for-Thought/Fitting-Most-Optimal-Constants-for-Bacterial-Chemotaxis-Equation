@@ -109,7 +109,11 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # A new epoch of data is generated for every instance of the training loop.
             data = self.data_generator.generate_data(self.max_iter)  # This is a tensor on the GPU
 
-            # The tensor is passed through the model to compute the output using the linear layer.
+            # The tensor is passed through the model to compute the output using the linear layer utilizing CUDA.
+            # This is to help extend the ML model to other applications, however, in this case alpha is
+            # computed using the physics equation within 'generate_data'.  Alpha, (α), is the key parameter that
+            # influences all vj(α) function data points, and it does not fit the typical weights used in a
+            # neural network.
             output = self.model(data.unsqueeze(-1))  # Add dimension if needed for linear layer.
 
             # Computing the MSE of the dynamic data point mean compared to the theoretical_val.
