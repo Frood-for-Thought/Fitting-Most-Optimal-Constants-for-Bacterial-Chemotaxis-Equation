@@ -81,19 +81,19 @@ class NormMeanDataGenerator(BaseDataGenerator):
         # Initialize with parameters specific to Norm_Vd_Mean_Data_Generator
         self.generator = Norm_Vd_Mean_Data_Generator(*args, **kwargs)
 
-    def generate_data(self, max_iter):
+    def generate_data(self, alpha, max_iter):
         """
         :param: max_iter: The total number of iterations to run in parallel, (the number of data points generated).
         :return: The datapoints generator specific to this system's generator method.
         """
-        return self.generator.simulate_bacterial_movement_cuda(max_iter)
+        return self.generator.simulate_bacterial_movement_cuda(alpha, max_iter)
 
 
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method('spawn')  # Required for CUDA tensors
 
     # Initialize the data generator.
-    data_generator = NormMeanDataGenerator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt)
+    data_generator = NormMeanDataGenerator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
 
     optim_alpha, loss_value = Dynamic_Data_Evolving_Mean_Estimator(data_generator, num_epochs, learning_rate,
                                                                    theoretical_val, alpha, max_iter).train()
