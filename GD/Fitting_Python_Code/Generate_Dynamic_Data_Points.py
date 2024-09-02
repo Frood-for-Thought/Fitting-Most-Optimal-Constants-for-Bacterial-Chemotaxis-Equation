@@ -6,9 +6,8 @@ import pandas as pd
 
 
 class Norm_Vd_Mean_Data_Generator:
-    def __init__(self, Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt):
+    def __init__(self, Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt):
         self.Rtroc = Rtroc  # Time rate of change of the fractional amount of receptor (protein) bound.
-        self.alpha = alpha  # The alpha constant to be found.
         self.Angle = Angle  # Bacterial orientation angle.
         self.Vo_max = Vo_max  # Run Speed.
         self.DL = DL  # Deme length [µM].
@@ -19,11 +18,12 @@ class Norm_Vd_Mean_Data_Generator:
         self.pos = DL * deme_start  # Position variable [µM].
         self.pos_ini = DL * deme_start  # Starting position [µM].
         self.velocities = None
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        logging.info(f"Initialized NormMeanMatchDataGenerator with: alpha={alpha}, Angle={Angle}, Vo_max={Vo_max},"
-                     f" DL={DL}, nl={nl}, deme_start={deme_start}, diff={diff}, dt={dt}")
+        logging.info(f"Initialized NormMeanMatchDataGenerator with: Angle={Angle}, Vo_max={Vo_max},"
+                     f" DL={DL}, nl={nl}, deme_start={deme_start}, diff={diff}, dt={dt}, device={self.device}")
 
-    def simulate_bacterial_movement_cuda(self, max_iter):
+    def simulate_bacterial_movement_cuda(self, alpha, max_iter):
         """
         Generates the Dataset for one Epoch of the ML algorithm.
         :param: max_iter: The total number of iterations to run in parallel, (the number of data points generated).
@@ -32,31 +32,32 @@ class Norm_Vd_Mean_Data_Generator:
         # Number of data points generated needs to remain in the method because the ML algorithm will adjust
         # this parameter through the training iterations as it repeatedly calls this method.
         # The max_iter gives a standard error of σ⁄√(max_iter) for the normalized data velocities.
+        self.alpha = alpha
         self.max_iter = max_iter
 
         # Initialize accumulators for sum of velocities and count
-        velocities = torch.zeros(self.max_iter, device='cuda')
+        velocities = torch.zeros(self.max_iter, device=self.device)
         velocities_index = 0
 
         # Initializing total time steps.
-        time_steps = torch.arange(0, 1000, self.dt, device='cuda')
+        time_steps = torch.arange(0, 1000, self.dt, device=self.device)
         num_steps = time_steps.size(0)
 
         # Initialize tensors for pos and ang for all iterations.
-        position = torch.zeros((num_steps, self.max_iter), device='cuda')
-        ang = torch.zeros((num_steps, self.max_iter), device='cuda')
+        position = torch.zeros((num_steps, self.max_iter), device=self.device)
+        ang = torch.zeros((num_steps, self.max_iter), device=self.device)
 
         # Starting Position.
-        position[0, :] = torch.full((self.max_iter,), self.pos, device='cuda')
+        position[0, :] = torch.full((self.max_iter,), self.pos, device=self.device)
 
         # Apply model constraints
         position = torch.clamp(position, 0, self.nl * self.DL)
 
         # Starting Angle: All angles start at 'self.Angle'.
-        ang[0, :] = torch.full((self.max_iter,), self.Angle, device='cuda').float()
+        ang[0, :] = torch.full((self.max_iter,), self.Angle, device=self.device).float()
 
         # Calculating the Timed Rate of Change Tensor
-        Rtroc_tensor = torch.tensor(self.Rtroc, device='cuda')  # Convert Rtroc to tensor
+        Rtroc_tensor = torch.tensor(self.Rtroc, device=self.device)  # Convert Rtroc to tensor
 
         # Initialize the angle generator class to select from probability distribution.
         angle_generator = AngleGenerator_cuda()
@@ -65,13 +66,13 @@ class Norm_Vd_Mean_Data_Generator:
         Next_Angle = angle_generator.tumble_angle_function_cuda(size=total_angles).view(num_steps, self.max_iter)
 
         # The random numbers to be used.
-        R_rt = torch.rand(total_angles, device='cuda').view(num_steps, self.max_iter)
+        R_rt = torch.rand(total_angles, device=self.device).view(num_steps, self.max_iter)
 
         # Initialize Ptum as a 2D tensor with dimensions [num_steps, max_iter].
-        Ptum = torch.zeros((num_steps, self.max_iter), device='cuda')
+        Ptum = torch.zeros((num_steps, self.max_iter), dtype=torch.float32, device=self.device)
 
         # Mask to track active bacteria
-        active_mask = torch.ones(self.max_iter, dtype=torch.bool, device='cuda')
+        active_mask = torch.ones(self.max_iter, dtype=torch.bool, device=self.device)
 
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
