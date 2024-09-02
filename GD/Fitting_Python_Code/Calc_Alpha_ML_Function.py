@@ -10,7 +10,7 @@ import logging
 # Abstract Base Class for Data Generators
 class BaseDataGenerator(ABC):
     @abstractmethod
-    def generate_data(self, max_iter):
+    def generate_data(self, alpha, max_iter):
         pass
 
 
@@ -24,12 +24,12 @@ class NormMeanDataGenerator(BaseDataGenerator):
         # Initialize with parameters specific to Norm_Vd_Mean_Data_Generator
         self.generator = Norm_Vd_Mean_Data_Generator(*args, **kwargs)
 
-    def generate_data(self, max_iter):
+    def generate_data(self, alpha, max_iter):
         """
         :param: max_iter: The total number of iterations to run in parallel, (the number of data points generated).
         :return: The datapoints generator specific to this system's generator method.
         """
-        return self.generator.simulate_bacterial_movement_cuda(max_iter)
+        return self.generator.simulate_bacterial_movement_cuda(alpha, max_iter)
 
 
 class Dynamic_Data_Evolving_Mean_Estimator:
@@ -83,23 +83,35 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         # Precompute a theoretical value tensor to match the shape of 'output' for the 'loss_function'.
         self.theoretical_val = torch.tensor(theoretical_val, dtype=torch.float32,
                                             device=self.device).unsqueeze(0).expand(max_iter, 1)
+
         # Convert the alpha integer to a tensor to be optimized.
-        self.alpha = torch.tensor(alpha, requires_grad=True, dtype=torch.float16, device=self.device)
+        alpha_value = float(alpha)  # Convert to float first.
+        self.alpha = torch.tensor(alpha_value, requires_grad=True, dtype=torch.float32, device=self.device)
+
+        print(f"Right after setting alpha requires_grad=True, alpha.grad_fn: {self.alpha.grad_fn}")
+
+        # Perform an operation
+        result = self.alpha * 1
+
+        # Now, grad_fn will be set, as 'result' was derived from an operation involving 'alpha'
+        print(f"After operation, alpha.grad_fn: {result.grad_fn}")  # Outputs: <MulBackward0 object>
 
         # Remove the bias term from the linear layer to avoid interference with the intrinsic
         # standard error of the dynamic mean.  y = W * x, (no 'b').
-        self.model = torch.nn.Linear(1, 1, bias=False).to(self.device)
+        # self.model = torch.nn.Linear(1, 1, bias=False).to(self.device)
 
         # Fix the weight to 1 and prevent it from being updated to limit resources.
         # The weights of the linear layer won't interfere with optimizing alpha,
         # but it will keep the data in the GPU to perform calculations with the loss function.
-        with torch.no_grad():
-            self.model.weight.fill_(1.0)  # Set weight to 1.
-            self.model.weight.requires_grad = False  # Disable gradient updates.
+        # with torch.no_grad():
+        #     self.model.weight.fill_(1.0)  # Set weight to 1.
+        #     self.model.weight.requires_grad = False  # Disable gradient updates.
 
         # Initialize the optimizer with the model parameters and learning rate.
         # The optimizer will handle the update of alpha based on the computed gradients.
         self.optimizer = torch.optim.SGD([self.alpha], lr=self.learning_rate)
+        print(f"After optimizer, alpha.grad_fn: {self.alpha.grad_fn}")
+
         self.loss_function = torch.nn.MSELoss()  # Mean Squared Error Loss function.
         # The learning rate scheduler will reduce the learning rate by learning_rate_reduction every step_size epochs.
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=self.step_size, gamma=self.learning_rate_gamma)
@@ -107,25 +119,32 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     def train(self):
         for epoch in range(self.num_epochs):
             # A new epoch of data is generated for every instance of the training loop.
-            data = self.data_generator.generate_data(self.max_iter)  # This is a tensor on the GPU
+            print(f"Before data generation, alpha.grad_fn: {self.alpha.grad_fn}")
+            data = self.data_generator.generate_data(self.alpha, self.max_iter)  # This is a tensor on the GPU
+            print(f"Loss alpha.grad_fn: {self.alpha.grad_fn}")
 
             # The tensor is passed through the model to compute the output using the linear layer utilizing CUDA.
             # This is to help extend the ML model to other applications, however, in this case alpha is
             # computed using the physics equation within 'generate_data'.  Alpha, (α), is the key parameter that
             # influences all vj(α) function data points, and it does not fit the typical weights used in a
             # neural network.
-            output = self.model(data.unsqueeze(-1))  # Add dimension if needed for linear layer.
+            # output = self.model(data.unsqueeze(-1))  # Add dimension if needed for linear layer.
 
             # Computing the MSE of the dynamic data point mean compared to the theoretical_val.
             # L(α)=MSE(∑vj(α),vd)
-            loss = self.loss_function(output, self.theoretical_val)
+            loss = self.loss_function(data, self.theoretical_val)
+
+            # Debugging step: Check if loss has a grad_fn
+            print(f"Loss alpha.grad_fn: {self.alpha.grad_fn}")
+            print(f"Loss grad_fn: {loss.grad_fn}")
 
             # Backward pass: Compute gradients
             self.optimizer.zero_grad()  # Reset previous gradient to prevent incorrect update.
 
             # Compute the gradient of the loss function with respect to the parameters with requires_grad=True,
             # in this case the alpha value.
-            # ∂L(α)/∂α = 2/n*∑(vα(j)−vd)*∂vα(j)/∂α
+            # ∂L(α)/∂α = 2/n*∑(vj(α)−vd)*∂vj(α)/∂α
+
             loss.backward()
 
             # Update the model's parameters (alpha) using gradient descent.
