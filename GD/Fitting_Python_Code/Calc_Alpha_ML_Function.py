@@ -108,6 +108,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=self.step_size, gamma=self.learning_rate_gamma)
 
     def train(self):
+        final_loss = None  # Store the final loss to return
         for epoch in range(self.num_epochs):
             # A new epoch of data is generated for every instance of the training loop.
             # data = 1/n * ∑vj(α) = mα ± ϵ
@@ -125,20 +126,21 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # **Modified loss function scaling**: Incorporate alpha into data to pretend like alpha is still in
             # the computational graph.  This is because data is a tensor output from the generate_data function
             # with a derivative that was too complex to manually compute.
-            # The gradient calculation was bypassed, (see notes above "loss.backward()")
+            # The gradient calculation was bypassed, (see notes below at "loss.backward()" for more details).
             # "α.detach()" is used so the denominator doesn't create unnecessary gradients.
             scaled_data = data * (self.alpha / self.alpha.detach())  # Keep alpha in the graph by scaling data by 1.
 
             # Computing the MSE of the dynamic data point mean compared to the theoretical_val.
             # L(α)=MSE(∑vj(α),vd)
             loss = self.loss_function(scaled_data, self.theoretical_val)
+            final_loss = loss  # Keep track of the latest loss for the return value
 
             # Backward pass: Compute gradients
             self.optimizer.zero_grad()  # Reset previous gradient to prevent incorrect update.
 
             # Compute the gradient of the loss function with respect to the parameters with requires_grad=True,
-            # in this case the alpha value.
-            # vj(α) is quite complex and non-differentiable by PyTorch, so loss.backward() cannot be used because
+            # in this case the alpha value.  The function the model hopes to optimize, vj(α), is quite complex
+            # and non-differentiable by PyTorch, so loss.backward() cannot be used because
             # within ∂L(α)/∂α = (2/n)∑(vj(α)−vd) * ∂vj(α)/∂α, ∂vj(α)/∂α is unknown.
             # A simplified linear equation for the mean of the gaussian distribution was used,
             # data = (1/n)∑vj(α) = m*α +/- standard_error,
@@ -148,6 +150,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # Instead, the derivative w.r.t. alpha is intrinsic to the learning rate, γ′= [(2/n)∑dvj(α)/dα]∗γ ≈ 2∗m∗γ,
             # and so no direct computation of the gradient is necessary.
             loss.backward()
+            # Print out the gradient of alpha after backpropagation
+            print(f"Epoch {epoch}:\nGradient of loss w.r.t. alpha: {self.alpha.grad.item()}")
+            print(f"Mean, (1/n)∑vj(α): {torch.mean(scaled_data)}")
 
             # Update the model's parameters (alpha) using gradient descent.
             # α_k_+_1 = α_k - γ*∂L(α)/∂α = α_k - γ'[m * α ± ϵ - v_d]
@@ -166,4 +171,4 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 logging.info(f"Epoch {epoch}, Loss: {loss.item()}, Alpha: {self.alpha.item()}")
 
         # Return the final optimized alpha and the final loss value
-        return self.alpha.item(), loss.item()
+        return self.alpha.item(), final_loss.item()
