@@ -150,8 +150,19 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # Instead, the derivative w.r.t. alpha is intrinsic to the learning rate, γ′= [(2/n)∑dvj(α)/dα]∗γ ≈ 2∗m∗γ,
             # and so no direct computation of the gradient is necessary.
             loss.backward()
+
+            # Since the function is not differentiable w.r.t. alpha, loss.backward() cannot compute the true gradient.
+            # This is why alpha.grad needs to be manually adjusted to 1, instead of relying on complex derivatives,
+            # as the chain rule derivative is now an intrinsic factor for γ′= [(2/n)∑dvj(α)/dα]∗γ.
+            with torch.no_grad():
+                if self.alpha.grad is not None:
+                    print(f"Before adjustment, gradient of alpha: {self.alpha.grad.item()}")
+                self.alpha.grad = torch.ones_like(self.alpha.grad)  # Set the gradient to 1
+                print(f"After adjustment, gradient of alpha: {self.alpha.grad.item()}")
+
             # Print out the gradient of alpha after backpropagation
             print(f"Epoch {epoch}:\nGradient of loss w.r.t. alpha: {self.alpha.grad.item()}")
+            print(f"The value of vd = {self.theoretical_val[0]}")
             print(f"Mean, (1/n)∑vj(α): {torch.mean(scaled_data)}")
 
             # Update the model's parameters (alpha) using gradient descent.
@@ -162,7 +173,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             self.scheduler.step()
 
             # Logging every step_size epochs.
-            if epoch % self.step_size == 0:
+            if (epoch % self.step_size == 0) and (epoch > 0):
                 # Update max_iter.
                 new_max_iter = self.max_iter * self.max_iter_factor
                 # Prevent max_iter from going over the max_iter_limit.
