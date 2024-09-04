@@ -90,11 +90,11 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
         print(f"Right after setting alpha requires_grad=True, alpha.grad_fn: {self.alpha.grad_fn}")
 
-        # Perform an operation
-        result = self.alpha * 1
+        # Create a proxy tensor linked to alpha
+        self.proxy_tensor = torch.ones(self.max_iter, device=self.device) * self.alpha
 
         # Now, grad_fn will be set, as 'result' was derived from an operation involving 'alpha'
-        print(f"After operation, alpha.grad_fn: {result.grad_fn}")  # Outputs: <MulBackward0 object>
+        print(f"After operation, proxy_tensor: {self.proxy_tensor}")
 
         # Remove the bias term from the linear layer to avoid interference with the intrinsic
         # standard error of the dynamic mean.  y = W * x, (no 'b').
@@ -120,8 +120,10 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         for epoch in range(self.num_epochs):
             # A new epoch of data is generated for every instance of the training loop.
             print(f"Before data generation, alpha.grad_fn: {self.alpha.grad_fn}")
-            data = self.data_generator.generate_data(self.alpha, self.max_iter)  # This is a tensor on the GPU
-            print(f"Loss alpha.grad_fn: {self.alpha.grad_fn}")
+            # data = 1/n * ∑vj(α) = mα ± ϵ
+            # The data point generator is external to PyTorch's computational graph and PyTorch cannot connect
+            # alpha using the chain rule because for this model ∂vj(α)/∂α is unknown.
+            data = self.data_generator.generate_data(self.alpha, self.max_iter).unsqueeze(-1)  # This is a tensor on the GPU
 
             # The tensor is passed through the model to compute the output using the linear layer utilizing CUDA.
             # This is to help extend the ML model to other applications, however, in this case alpha is
@@ -143,12 +145,16 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
             # Compute the gradient of the loss function with respect to the parameters with requires_grad=True,
             # in this case the alpha value.
-            # ∂L(α)/∂α = 2/n*∑(vj(α)−vd)*∂vj(α)/∂α
+            # vj(α) is quite complex and non-differentiable by PyTorch, so loss.backward() cannot be used because
+            # within ∂L(α)/∂α = (2/n)∑(vj(α)−vd) * ∂vj(α)/∂α, ∂vj(α)/∂α is unknown.
+            # A simplified linear equation for the mean of the gaussian distribution was used,
+            # data = (1/n)∑vj(α) = m*α +/- standard_error,
+            # with m being the slope of the mean for the distribution of vj(α) w.r.t. alpha.
+            # The gradient needs to be manually computed using the approximation (1/n)∑dvj(α)/dα ≈ m.
 
-            loss.backward()
 
             # Update the model's parameters (alpha) using gradient descent.
-            # α_k_+_1 = α_k - γ*∂L(α)/∂α
+            # α_k_+_1 = α_k - γ*∂L(α)/∂α = α_k - γ'[m * α ± ϵ - v_d]
             self.optimizer.step()  # This internally updates alpha based on the gradients and learning rate.
 
             # Scheduler step: Adjust the learning rate according to the schedule.
