@@ -68,7 +68,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     :param: alpha: The independent variable the ML model is optimizing for a stochastic function whose mean
     """
     def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val, alpha,
-                 max_iter, step_size=20, max_iter_limit=20000, max_iter_factor=2, learning_rate_gamma=0.85):
+                 max_iter, step_size=20, max_iter_limit=20000, max_iter_factor=2, learning_rate_gamma=0.7):
 
         self.data_generator = data_generator
         self.max_iter = max_iter
@@ -116,6 +116,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # alpha using the chain rule because for this model ∂vj(α)/∂α is unknown.
             data = self.data_generator.generate_data(self.alpha, self.max_iter).unsqueeze(-1)  # This is a tensor on the GPU
 
+            # Dynamically update theoretical_val match the size of scaled_data.
+            self.theoretical_val = self.theoretical_val[0].unsqueeze(0).expand(self.max_iter, 1)
+
             # The tensor is passed through the model to compute the output using the linear layer utilizing CUDA.
             # This is to help extend the ML model to other applications, however, in this case alpha is
             # computed using the physics equation within 'generate_data'.  Alpha, (α), is the key parameter that
@@ -155,15 +158,20 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # This is why alpha.grad needs to be manually adjusted to 1, instead of relying on complex derivatives,
             # as the chain rule derivative is now an intrinsic factor for γ′= [(2/n)∑dvj(α)/dα]∗γ.
             with torch.no_grad():
-                self.alpha.grad = loss.clone().detach()  # Set the gradient of alpha to be equal to (L(α) * 1).
+                # Set the gradient of alpha to be equal to 1 in magnitude, and compute the residual in order to
+                # maintain the direction of the gradient.  In this case L(α) * dL/dα = - L(α) * 1, (dL/dα in γ').
+                residual = torch.mean(scaled_data) - self.theoretical_val[0]  # Residual of (mean(∑vj(α)) - vd).
+                self.alpha.grad = torch.tensor(residual.item(), dtype=self.alpha.dtype, device=self.alpha.device)
 
             # Print out the gradient of alpha after backpropagation.
-            print(f"Epoch {epoch}:")
-            print(f"Alpha = {self.alpha}")
-            print(f"Effective Learning Rate, γ' = 2mγ = {self.learning_rate}")
-            print(f"Gradient of loss w.r.t. alpha, γ'dL/da: {self.learning_rate * self.alpha.grad.item()}")
+            print(f"\nEpoch {epoch}:")
+            print(f"Alpha = {self.alpha.item()}")
+            print(f"Effective Learning Rate, γ' = 2mγ = {self.learning_rate.item()}")
+            print(f"Gradient of loss w.r.t. alpha, γ'dL/da = {self.learning_rate * self.alpha.grad.item()}")
             print(f"The value of vd = {self.theoretical_val[0].item()}")
-            print(f"Mean, (1/n)∑vj(α): {torch.mean(scaled_data)}")
+            print(f"Mean, (1/n)∑vj(α) = {torch.mean(scaled_data)}")
+            print(f"Loss = {loss.clone().detach()}")
+            print(f"Residual = {residual.item()}")
 
             # Update the model's parameters (alpha) using gradient descent.
             # α_k_+_1 = α_k - γ*∂L(α)/∂α = α_k - γ'[m * α ± ϵ - v_d]

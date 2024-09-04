@@ -44,7 +44,7 @@ deme_start = 30
 
 # Values used for Dynamic_Data_Evolving_Mean_Estimator.
 num_epochs = 100
-learning_rate = 1 / (100 * Rtroc[deme_start])
+learning_rate = 2 / (100 * Rtroc[deme_start])
 theoretical_val = vd_chemotaxis[deme_start]
 max_iter = 1000
 
