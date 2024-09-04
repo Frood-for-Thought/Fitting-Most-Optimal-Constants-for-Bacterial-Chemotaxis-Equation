@@ -155,14 +155,14 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # This is why alpha.grad needs to be manually adjusted to 1, instead of relying on complex derivatives,
             # as the chain rule derivative is now an intrinsic factor for γ′= [(2/n)∑dvj(α)/dα]∗γ.
             with torch.no_grad():
-                if self.alpha.grad is not None:
-                    print(f"Before adjustment, gradient of alpha: {self.alpha.grad.item()}")
-                self.alpha.grad = torch.ones_like(self.alpha.grad)  # Set the gradient to 1
-                print(f"After adjustment, gradient of alpha: {self.alpha.grad.item()}")
+                self.alpha.grad = loss.clone().detach()  # Set the gradient of alpha to be equal to (L(α) * 1).
 
-            # Print out the gradient of alpha after backpropagation
-            print(f"Epoch {epoch}:\nGradient of loss w.r.t. alpha: {self.alpha.grad.item()}")
-            print(f"The value of vd = {self.theoretical_val[0]}")
+            # Print out the gradient of alpha after backpropagation.
+            print(f"Epoch {epoch}:")
+            print(f"Alpha = {self.alpha}")
+            print(f"Effective Learning Rate, γ' = 2mγ = {self.learning_rate}")
+            print(f"Gradient of loss w.r.t. alpha, γ'dL/da: {self.learning_rate * self.alpha.grad.item()}")
+            print(f"The value of vd = {self.theoretical_val[0].item()}")
             print(f"Mean, (1/n)∑vj(α): {torch.mean(scaled_data)}")
 
             # Update the model's parameters (alpha) using gradient descent.
