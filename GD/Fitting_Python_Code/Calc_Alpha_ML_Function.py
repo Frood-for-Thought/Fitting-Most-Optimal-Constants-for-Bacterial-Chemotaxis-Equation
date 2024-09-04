@@ -88,14 +88,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         alpha_value = float(alpha)  # Convert to float first.
         self.alpha = torch.tensor(alpha_value, requires_grad=True, dtype=torch.float32, device=self.device)
 
-        print(f"Right after setting alpha requires_grad=True, alpha.grad_fn: {self.alpha.grad_fn}")
-
-        # Create a proxy tensor linked to alpha
-        self.proxy_tensor = torch.ones(self.max_iter, device=self.device) * self.alpha
-
-        # Now, grad_fn will be set, as 'result' was derived from an operation involving 'alpha'
-        print(f"After operation, proxy_tensor: {self.proxy_tensor}")
-
         # Remove the bias term from the linear layer to avoid interference with the intrinsic
         # standard error of the dynamic mean.  y = W * x, (no 'b').
         # self.model = torch.nn.Linear(1, 1, bias=False).to(self.device)
@@ -110,7 +102,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         # Initialize the optimizer with the model parameters and learning rate.
         # The optimizer will handle the update of alpha based on the computed gradients.
         self.optimizer = torch.optim.SGD([self.alpha], lr=self.learning_rate)
-        print(f"After optimizer, alpha.grad_fn: {self.alpha.grad_fn}")
 
         self.loss_function = torch.nn.MSELoss()  # Mean Squared Error Loss function.
         # The learning rate scheduler will reduce the learning rate by learning_rate_reduction every step_size epochs.
@@ -119,7 +110,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     def train(self):
         for epoch in range(self.num_epochs):
             # A new epoch of data is generated for every instance of the training loop.
-            print(f"Before data generation, alpha.grad_fn: {self.alpha.grad_fn}")
             # data = 1/n * ∑vj(α) = mα ± ϵ
             # The data point generator is external to PyTorch's computational graph and PyTorch cannot connect
             # alpha using the chain rule because for this model ∂vj(α)/∂α is unknown.
@@ -132,13 +122,16 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # neural network.
             # output = self.model(data.unsqueeze(-1))  # Add dimension if needed for linear layer.
 
+            # **Modified loss function scaling**: Incorporate alpha into data to pretend like alpha is still in
+            # the computational graph.  This is because data is a tensor output from the generate_data function
+            # with a derivative that was too complex to manually compute.
+            # The gradient calculation was bypassed, (see notes above "loss.backward()")
+            # "α.detach()" is used so the denominator doesn't create unnecessary gradients.
+            scaled_data = data * (self.alpha / self.alpha.detach())  # Keep alpha in the graph by scaling data by 1.
+
             # Computing the MSE of the dynamic data point mean compared to the theoretical_val.
             # L(α)=MSE(∑vj(α),vd)
-            loss = self.loss_function(data, self.theoretical_val)
-
-            # Debugging step: Check if loss has a grad_fn
-            print(f"Loss alpha.grad_fn: {self.alpha.grad_fn}")
-            print(f"Loss grad_fn: {loss.grad_fn}")
+            loss = self.loss_function(scaled_data, self.theoretical_val)
 
             # Backward pass: Compute gradients
             self.optimizer.zero_grad()  # Reset previous gradient to prevent incorrect update.
@@ -150,8 +143,11 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # A simplified linear equation for the mean of the gaussian distribution was used,
             # data = (1/n)∑vj(α) = m*α +/- standard_error,
             # with m being the slope of the mean for the distribution of vj(α) w.r.t. alpha.
-            # The gradient needs to be manually computed using the approximation (1/n)∑dvj(α)/dα ≈ m.
-
+            # Since the gradient is not manually computed using (1/n)∑dvj(α)/dα ≈ m,
+            # loss.backward() uses scaled_data to pretend like a derivative function proportional to alpha is present.
+            # Instead, the derivative w.r.t. alpha is intrinsic to the learning rate, γ′= [(2/n)∑dvj(α)/dα]∗γ ≈ 2∗m∗γ,
+            # and so no direct computation of the gradient is necessary.
+            loss.backward()
 
             # Update the model's parameters (alpha) using gradient descent.
             # α_k_+_1 = α_k - γ*∂L(α)/∂α = α_k - γ'[m * α ± ϵ - v_d]
@@ -169,5 +165,5 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
                 logging.info(f"Epoch {epoch}, Loss: {loss.item()}, Alpha: {self.alpha.item()}")
 
-            # Return the final optimized alpha and the final loss value
-            return self.alpha.item(), loss.item()
+        # Return the final optimized alpha and the final loss value
+        return self.alpha.item(), loss.item()
