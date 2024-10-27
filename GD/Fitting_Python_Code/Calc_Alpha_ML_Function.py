@@ -152,7 +152,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # loss.backward() uses scaled_data to pretend like a derivative function proportional to alpha is present.
             # Instead, the derivative w.r.t. alpha is intrinsic to the learning rate, γ′= [(2/n)∑dvj(α)/dα]∗γ ≈ 2∗m∗γ,
             # and so no direct computation of the gradient is necessary.
-            loss.backward()
+            # loss.backward()
 
             # Since the function is not differentiable w.r.t. alpha, loss.backward() cannot compute the true gradient.
             # This is why alpha.grad needs to be manually adjusted to 1, instead of relying on complex derivatives,
