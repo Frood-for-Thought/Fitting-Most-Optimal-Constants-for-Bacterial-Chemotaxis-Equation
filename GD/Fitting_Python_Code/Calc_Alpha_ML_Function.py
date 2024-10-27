@@ -159,7 +159,8 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # as the chain rule derivative is now an intrinsic factor for γ′= [(2/n)∑dvj(α)/dα]∗γ.
             with torch.no_grad():
                 # Set the gradient of alpha to be equal to 1 in magnitude, and compute the residual in order to
-                # maintain the direction of the gradient.  In this case L(α) * dL/dα = - L(α) * 1, (dL/dα in γ').
+                # maintain the direction of the gradient.
+                # In this case (mean(∑vj(α)) - vd) * dL/dα = - (mean(∑vj(α)) - vd) * 1, (dL/dα in γ').
                 residual = torch.mean(scaled_data) - self.theoretical_val[0]  # Residual of (mean(∑vj(α)) - vd).
                 self.alpha.grad = torch.tensor(residual.item(), dtype=self.alpha.dtype, device=self.alpha.device)
 
