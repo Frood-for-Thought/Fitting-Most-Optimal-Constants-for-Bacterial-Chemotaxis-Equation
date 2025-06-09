@@ -1,0 +1,2 @@
+The D-DEME algorithm was created several years prior than now to solve for a chemotaxis probability distribution.
+This is a python conversion of the program from MATLAB.
